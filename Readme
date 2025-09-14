@@ -1,0 +1,120 @@
+FineBank.io – Personal Finance AI Assistant
+===========================================
+
+FineBank.io is a personal finance management prototype that integrates a modern
+dashboard interface with AI-driven insights. It allows users to securely log in,
+view financial KPIs, analyze spending, and interact with an AI assistant (via
+Ollama local LLM or cloud APIs like GPT-4).
+
+Features
+
+- Authentication System
+  - Secure login (username + password, JWT-ready).
+  - Role-based permissions for data access.
+
+- Dashboard Modules
+  - Account balances & net worth tracking.
+  - Income vs. expense analysis.
+  - Weekly/monthly financial comparisons with interactive charts.
+  - Upcoming bills & financial goals.
+  - Expense breakdown visualization (housing, food, transport, shopping, etc.).
+
+- AI Chat Assistant
+  - Natural language Q&A about personal finances.
+  - Runs offline via Ollama or online with GPT-4/Gemini/Claude APIs.
+  - Supports rule-based fallback (EMI, SIP, savings forecast, debt paydown).
+  - Context-aware responses (uses only the data categories you grant).
+
+- Data Permissions
+  - Fine-grained toggles for assets, liabilities, transactions, EPF, credit score, and investments.
+  - LocalStorage persistence for permission states.
+
+- Privacy & Security
+  - Data privacy by design: computation on client-side or via local Ollama instance.
+  - Ready for JWT-based authentication and encrypted MCP integration.
+
+
+ Tech Stack
+
+Frontend
+- React (Vite)
+- TailwindCSS
+- Chart.js / Recharts
+- Vanilla JavaScript (fallback)
+
+Backend
+- Node.js + Express (default)
+- FastAPI (Python optional alternative)
+- Database: PostgreSQL or SQLite
+
+AI / Analytics
+- Ollama (local LLM runtime)
+- GPT-4 / Gemini / Claude APIs (optional cloud integration)
+- Rule-based calculators: EMI, SIP, savings forecast, anomaly detection
+
+Security
+- JWT authentication (planned)
+- HTTPS/TLS-ready backend
+- Per-category data access controls
+
+
+Project Structure
+
+/client
+  ├── index.html       # Frontend dashboard + chat
+  ├── mock/            # Mock JSON data (assets, liabilities, etc.)
+  └── src/             # React components, styles, charts
+
+/server
+  ├── server.js        # Express backend (API + Ollama integration)
+  ├── package.json     # Backend dependencies
+  └── .env             # Environment variables (e.g., API keys, PORT)
+
+Getting Started
+
+Prerequisites
+- Node.js (>=18)
+- npm or yarn
+- Ollama (installed locally → https://ollama.com/download)
+
+Setup
+1. Clone repo:
+   git clone https://github.com/<your-username>/finebank.io.git
+   cd finebank.io
+
+2. Install backend dependencies:
+   cd server
+   npm install
+
+3. Start backend server (default: http://localhost:5050):
+   npm start
+
+4. Serve frontend (with Vite or serve):
+   cd client
+   npm install
+   npm run dev
+   Or, if plain HTML:
+   npx serve .
+
+5. Pull and run Ollama model (for offline AI):
+   ollama pull llama3.2
+   ollama serve
+
+ Example Queries for AI
+
+- Can I afford a vacation next month?
+- Why did my expenses increase last quarter?
+- What’s the best way to repay my loan faster?
+- How much can I save in the next 6 months?
+
+
+ Security Considerations
+
+- No sensitive data leaves the client unless explicitly allowed.
+- AI processing runs locally (Ollama) by default.
+- Supports hybrid deployment: local + cloud AI.
+- Future-ready for compliance: PII redaction, audit logs, RBAC.
+Team
+
+Team Name: Runtime Terrors
+Hackathon Submission: HackovateLJ
