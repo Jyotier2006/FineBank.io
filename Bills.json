@@ -1,0 +1,40 @@
+{
+  "bills": [
+    {
+      "merchant": "Airtel Fiber",
+      "category": "Telecom",
+      "due_date": "2025-10-05",
+      "status": "Upcoming",
+      "autopay": true,
+      "amount": 999,
+      "actions": ["Snooze 3d", "Mark paid"]
+    },
+    {
+      "merchant": "Electricity",
+      "category": "Utilities",
+      "due_date": "2025-10-10",
+      "status": "Upcoming",
+      "autopay": false,
+      "amount": 1350,
+      "actions": ["Snooze 3d", "Mark paid"]
+    },
+    {
+      "merchant": "Water",
+      "category": "Utilities",
+      "due_date": "2025-10-12",
+      "status": "Upcoming",
+      "autopay": false,
+      "amount": 420,
+      "actions": ["Snooze 3d", "Mark paid"]
+    },
+    {
+      "merchant": "Adobe",
+      "category": "Subscriptions",
+      "due_date": "2025-10-16",
+      "status": "Upcoming",
+      "autopay": false,
+      "amount": 559,
+      "actions": ["Snooze 3d", "Mark paid"]
+    }
+  ]
+}

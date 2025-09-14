@@ -1,0 +1,24 @@
+{
+  "balances": {
+    "accounts": [
+      {
+        "bank": "HDFC Bank",
+        "type": "Savings",
+        "account_number": "****1023",
+        "nickname": "Primary",
+        "balance": 240000
+      },
+      {
+        "bank": "SBI Bank",
+        "type": "Savings",
+        "account_number": "****7781",
+        "nickname": "Salary",
+        "balance": 90000
+      }
+    ],
+    "cash": 60000,
+    "investments": {
+      "summary": 920000
+    }
+  }
+}

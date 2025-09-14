@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Expenses — FineBank.io</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Sidebar -->
+      <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 grid place-items-center">₹</div>
+          <div class="font-semibold">FineBank.io</div>
+        </div>
+        <nav class="space-y-1 text-sm">
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="index.html">Overview</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="transaction.html">Transactions</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="bills.html">Bills</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="expenses.html">Expenses</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="goals.html">Goals</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="settings.html">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+        <!-- Header / Filters -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold">Expenses</h1>
+            <p class="text-xs text-slate-500">Inline demo data. Re-categorise, exclude, or mark as refund — calculations update instantly.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+              <input id="q" class="w-48 rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm" placeholder="Search merchant/category">
+            </div>
+
+            <select id="month" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All months</option>
+            </select>
+
+            <select id="cat" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All categories</option>
+            </select>
+
+            <select id="method" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All methods</option>
+              <option>UPI</option><option>Card</option><option>Cash</option><option>Bank</option>
+            </select>
+
+            <input id="min" type="number" min="0" class="w-24 rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Min ₹">
+            <input id="max" type="number" min="0" class="w-24 rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Max ₹">
+
+            <button id="clear" class="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Clear</button>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 mt-6">
+          <!-- Left: list -->
+          <section class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 p-4 shadow">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold">Transactions</h2>
+              <div class="text-xs text-slate-500"><span id="count">0</span> items — <span id="viewTotal">₹0</span></div>
+            </div>
+            <div id="txList" class="divide-y divide-slate-100"></div>
+          </section>
+
+          <!-- Right: calculations only (no graphs) -->
+          <aside class="lg:col-span-1">
+            <div class="sticky top-6 space-y-4">
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Totals (current view)</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Total spent</span><span id="totSpent" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Transactions</span><span id="txCount" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Average amount</span><span id="avgAmt" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Largest expense</span><span id="largest" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">This month</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Spent so far</span><span id="monthSpent" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Daily average</span><span id="dailyAvg" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Projected month-end</span><span id="projected" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Days remaining</span><span id="daysLeft" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Budget vs actual</h3>
+                <ul id="budList" class="text-sm space-y-1.5"></ul>
+                <div class="mt-2 flex justify-between text-sm border-t border-slate-100 pt-2">
+                  <span>Overall budget</span><span id="budOverall" class="font-semibold">—</span>
+                </div>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Top categories (view)</h3>
+                <ol id="topCats" class="text-sm space-y-1.5 list-decimal list-inside"></ol>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Payment method mix</h3>
+                <ul id="methodMix" class="text-sm space-y-1.5"></ul>
+              </div>
+
+              <div id="alertBox" class="hidden rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">
+                <strong>Heads up:</strong> You are projected to exceed this month’s budget.
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== Inline Data + Logic ===== -->
+  <script>
+    // Helpers
+    const INR = n => new Intl.NumberFormat('en-IN',{ style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);
+    const fmtDate = d => new Date(d).toLocaleDateString('en-IN',{ day:'2-digit', month:'short' });
+    const yyyymm = d => new Date(d).toISOString().slice(0,7);
+    const today = () => new Date(new Date().toDateString());
+    const startOfMonth = d => new Date(d.getFullYear(), d.getMonth(), 1);
+    const endOfMonth = d => new Date(d.getFullYear(), d.getMonth()+1, 0);
+    const daysInMonth = d => endOfMonth(d).getDate();
+
+    // Dynamic date helpers for current/prev month
+    const now = today();
+    const d = (day) => new Date(now.getFullYear(), now.getMonth(), day);
+    const pm = (day) => new Date(now.getFullYear(), now.getMonth()-1, day);
+
+    // Inline demo expenses (no fetch)
+    const categories = ["Groceries","Eating Out","Transport","Shopping","Entertainment","Health","Utilities","Other"];
+    let tx = [
+      {id:1,  date:d(2),  merchant:"Big Bazaar",       category:"Groceries",     method:"UPI",  amount:2450},
+      {id:2,  date:d(3),  merchant:"Uber",             category:"Transport",     method:"Card", amount:320},
+      {id:3,  date:d(5),  merchant:"Domino's",         category:"Eating Out",    method:"UPI",  amount:780},
+      {id:4,  date:d(5),  merchant:"Amazon",           category:"Shopping",      method:"Card", amount:3499},
+      {id:5,  date:d(7),  merchant:"Vishal Mega Mart", category:"Groceries",     method:"UPI",  amount:1890},
+      {id:6,  date:d(8),  merchant:"INOX",             category:"Entertainment", method:"Card", amount:650},
+      {id:7,  date:d(10), merchant:"MedPlus",          category:"Health",        method:"UPI",  amount:900},
+      {id:8,  date:d(12), merchant:"HP Fuel",          category:"Transport",     method:"Card", amount:2200},
+      {id:9,  date:d(14), merchant:"H&M",              category:"Shopping",      method:"Card", amount:1899},
+      {id:10, date:d(16), merchant:"Subway",           category:"Eating Out",    method:"UPI",  amount:450},
+      {id:11, date:d(18), merchant:"Zudio",            category:"Shopping",      method:"Card", amount:1299},
+      {id:12, date:d(20), merchant:"Local Market",     category:"Groceries",     method:"Cash", amount:780},
+      // previous month
+      {id:13, date:pm(22), merchant:"Reliance Fresh",  category:"Groceries",     method:"UPI",  amount:3100},
+      {id:14, date:pm(23), merchant:"KFC",             category:"Eating Out",    method:"Card", amount:720},
+      {id:15, date:pm(25), merchant:"Myntra",          category:"Shopping",      method:"Card", amount:2599},
+    ].map(r => ({...r, excluded:false, refund:false}));
+
+    // Simple monthly budgets (edit as you like)
+    const budgets = {
+      "Groceries": 12000,
+      "Eating Out": 6000,
+      "Transport": 5000,
+      "Shopping": 8000,
+      "Entertainment": 3000,
+      "Health": 3000,
+      "Utilities": 2000,
+      "Other": 2000
+    };
+
+    // Refs
+    const qEl = document.getElementById('q');
+    const monthEl = document.getElementById('month');
+    const catEl = document.getElementById('cat');
+    const methodEl = document.getElementById('method');
+    const minEl = document.getElementById('min');
+    const maxEl = document.getElementById('max');
+    const listEl = document.getElementById('txList');
+
+    // Populate filter selects
+    const months = [...new Set(tx.map(t=>yyyymm(t.date)))].sort().reverse();
+    months.forEach(m => monthEl.append(new Option(m, m)));
+    if (months.length) monthEl.value = months[0];
+    categories.forEach(c => catEl.append(new Option(c, c)));
+
+    // Events
+    document.getElementById('clear').addEventListener('click', ()=>{
+      qEl.value=''; catEl.value='all'; methodEl.value='all'; minEl.value=''; maxEl.value=''; monthEl.value = months[0] || 'all'; render();
+    });
+    [qEl, monthEl, catEl, methodEl, minEl, maxEl].forEach(el => el.addEventListener('input', render));
+
+    // Filter + view helpers
+    function filtered(){
+      const q = qEl.value.trim().toLowerCase();
+      const ym = monthEl.value;
+      const cat = catEl.value;
+      const method = methodEl.value;
+      const min = +minEl.value || 0;
+      const max = +maxEl.value || Infinity;
+
+      return tx.filter(t=>{
+        if (t.excluded) return false;
+        if (ym !== 'all' && yyyymm(t.date) !== ym) return false;
+        if (cat !== 'all' && t.category !== cat) return false;
+        if (method !== 'all' && t.method !== method) return false;
+        if (q && !(t.merchant.toLowerCase().includes(q) || t.category.toLowerCase().includes(q))) return false;
+        const amt = t.refund ? -t.amount : t.amount;
+        if (amt < min) return false;
+        if (amt > max) return false;
+        return true;
+      }).sort((a,b)=> b.date - a.date);
+    }
+
+    // Rendering list
+    function renderList(items){
+      document.getElementById('count').textContent = items.length;
+      const total = items.reduce((s,t)=> s + (t.refund ? -t.amount : t.amount), 0);
+      document.getElementById('viewTotal').textContent = INR(total);
+
+      if (!items.length){
+        listEl.innerHTML = `<div class="py-10 text-center text-sm text-slate-500">No expenses match your filters.</div>`;
+        return;
+      }
+
+      const catOptions = categories.map(c=>`<option ${c==='Other'?'selected':''}>${c}</option>`).join('');
+
+      listEl.innerHTML = items.map(t=>{
+        const amt = t.refund ? -t.amount : t.amount;
+        const chips = `
+          <span class="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">${t.category}</span>
+          <span class="px-2 py-0.5 rounded-full text-[11px] bg-indigo-100 text-indigo-700">${t.method}</span>
+          ${t.refund? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-700">Refund</span>` : ``}
+        `;
+        return `
+          <div class="py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-slate-100 grid place-items-center text-xs font-semibold">${t.merchant[0]}</div>
+              <div>
+                <div class="font-medium text-sm">${t.merchant}</div>
+                <div class="text-[11px] text-slate-500">on ${fmtDate(t.date)}</div>
+                <div class="mt-1 flex gap-1">${chips}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="text-sm font-semibold ${t.refund?'text-emerald-600':'text-slate-800'}">${INR(amt)}</div>
+
+              <label class="text-[11px] text-slate-600 flex items-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" ${t.refund?'checked':''} data-act="refund" data-id="${t.id}" class="accent-emerald-600">
+                Refund
+              </label>
+
+              <label class="text-[11px] text-slate-600 flex items-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" ${t.excluded?'checked':''} data-act="exclude" data-id="${t.id}" class="accent-slate-600">
+                Exclude
+              </label>
+
+              <select data-act="recategorize" data-id="${t.id}" class="rounded-lg border border-slate-300 px-2 py-1 text-[11px]">
+                ${categories.map(c=>`<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('input, select').forEach(el=>{
+        el.addEventListener('change', ()=>{
+          const id = +el.dataset.id;
+          const row = tx.find(x=>x.id===id);
+          if (!row) return;
+          const act = el.dataset.act;
+          if (act==='refund')  row.refund = el.checked;
+          if (act==='exclude') row.excluded = el.checked;
+          if (act==='recategorize') row.category = el.value;
+          render();
+        });
+      });
+    }
+
+    // Calculations (right)
+    function calcThisMonth(){
+      const ym = yyyymm(now);
+      const inMonth = tx.filter(t => !t.excluded && yyyymm(t.date)===ym);
+      const spent = inMonth.reduce((s,t)=> s + (t.refund ? -t.amount : t.amount), 0);
+      const day = now.getDate();
+      const dim = daysInMonth(now);
+      const dailyAvg = day ? Math.round(spent / day) : 0;
+      const projected = Math.round(dailyAvg * dim);
+      const daysLeft = Math.max(0, dim - day);
+      return {spent, dailyAvg, projected, daysLeft, inMonth};
+    }
+
+    function topCategories(items){
+      const map = {};
+      items.forEach(t=>{
+        const v = t.refund ? -t.amount : t.amount;
+        map[t.category] = (map[t.category]||0) + v;
+      });
+      return Object.entries(map).sort((a,b)=> b[1]-a[1]).slice(0,3);
+    }
+
+    function methodMix(items){
+      const map = {};
+      let total = 0;
+      items.forEach(t=>{
+        const v = t.refund ? -t.amount : t.amount;
+        map[t.method] = (map[t.method]||0) + v;
+        total += v;
+      });
+      return Object.entries(map).map(([k,v])=>[k, v, total? Math.round(v/total*100):0]).sort((a,b)=> b[1]-a[1]);
+    }
+
+    function budgetBlocks(inMonth){
+      // actual per category in current month
+      const actMap = {};
+      inMonth.forEach(t=>{
+        const v = t.refund ? -t.amount : t.amount;
+        actMap[t.category] = (actMap[t.category]||0) + v;
+      });
+      const cats = Object.keys(budgets);
+      const rows = cats.map(c=>{
+        const bud = budgets[c] || 0;
+        const act = Math.round(actMap[c] || 0);
+        const pct = bud ? Math.round(act/bud*100) : 0;
+        return {c, bud, act, pct};
+      }).filter(r => r.bud>0 || r.act>0);
+      const overallBud = rows.reduce((s,r)=>s+r.bud,0);
+      const overallAct = rows.reduce((s,r)=>s+r.act,0);
+      return {rows, overallBud, overallAct};
+    }
+
+    function renderCalcs(items){
+      // View totals
+      const amounts = items.map(t => t.refund? -t.amount : t.amount);
+      const tot = amounts.reduce((a,b)=>a+b,0);
+      const largest = amounts.length? Math.max(...amounts) : 0;
+      const avg = amounts.length? Math.round(tot/amounts.length) : 0;
+      document.getElementById('totSpent').textContent = amounts.length? INR(tot) : '—';
+      document.getElementById('txCount').textContent = items.length || '—';
+      document.getElementById('avgAmt').textContent = items.length? INR(avg) : '—';
+      document.getElementById('largest').textContent = items.length? INR(largest) : '—';
+
+      // Month metrics
+      const m = calcThisMonth();
+      document.getElementById('monthSpent').textContent = INR(m.spent);
+      document.getElementById('dailyAvg').textContent = INR(m.dailyAvg);
+      document.getElementById('projected').textContent = INR(m.projected);
+      document.getElementById('daysLeft').textContent = m.daysLeft;
+
+      // Budget vs actual
+      const {rows, overallBud, overallAct} = budgetBlocks(m.inMonth);
+      document.getElementById('budList').innerHTML = rows
+        .sort((a,b)=> (b.act/b.bud) - (a.act/a.bud))
+        .slice(0,6)
+        .map(r=>{
+          const color = r.pct>100 ? 'text-rose-600' : r.pct>80 ? 'text-amber-600' : 'text-emerald-600';
+          return `<li class="flex justify-between"><span>${r.c} (${r.pct||0}%)</span><span class="font-semibold ${color}">${INR(r.act)} / ${INR(r.bud)}</span></li>`;
+        }).join('') || '<li class="text-slate-500">No budgets configured.</li>';
+      const overallColor = overallAct>overallBud ? 'text-rose-600' : 'text-slate-800';
+      document.getElementById('budOverall').innerHTML = `<span class="${overallColor} font-semibold">${INR(overallAct)}</span> / ${INR(overallBud)}`;
+
+      // Top categories for current view
+      const tops = topCategories(items);
+      document.getElementById('topCats').innerHTML = tops.length
+        ? tops.map(([c,v])=>`<li class="flex justify-between"><span>${c}</span><span class="font-semibold">${INR(v)}</span></li>`).join('')
+        : '<li class="text-slate-500">—</li>';
+
+      // Payment method mix
+      const mix = methodMix(items);
+      document.getElementById('methodMix').innerHTML = mix.length
+        ? mix.map(([k,v,p])=>`<li class="flex justify-between"><span>${k}</span><span class="font-semibold">${INR(v)} (${p}%)</span></li>`).join('')
+        : '<li class="text-slate-500">—</li>';
+
+      // Alert when projected > overall budget
+      const alert = document.getElementById('alertBox');
+      if (overallBud && m.projected > overallBud) alert.classList.remove('hidden');
+      else alert.classList.add('hidden');
+    }
+
+    function render(){
+      const items = filtered();
+      renderList(items);
+      renderCalcs(items);
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>

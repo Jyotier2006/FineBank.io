@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Goals — FineBank.io</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Sidebar -->
+      <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 grid place-items-center">₹</div>
+          <div class="font-semibold">FineBank.io</div>
+        </div>
+        <nav class="space-y-1 text-sm">
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="index.html">Overview</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="balances.html">Balances</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="transaction.html">Transactions</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="bills.html">Bills</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="expenses.html">Expenses</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="goals.html">Goals</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="settings.html">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+        <!-- Header -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold">Goals</h1>
+            <p class="text-xs text-slate-500">Inline demo data. Edit amounts or monthly contributions — projections update instantly.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="addBtn" class="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">+ New goal</button>
+            <select id="filterStatus" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="all">All</option>
+            </select>
+            <select id="filterCat" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All categories</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 mt-6">
+          <!-- Goals list -->
+          <section class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 p-4 shadow">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold">Your goals</h2>
+              <div class="text-xs text-slate-500"><span id="goalCount">0</span> items</div>
+            </div>
+            <div id="goalList" class="space-y-3"></div>
+          </section>
+
+          <!-- Calculations -->
+          <aside class="lg:col-span-1">
+            <div class="sticky top-6 space-y-4">
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Overview (active)</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Total target</span><span id="ovTarget" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Saved so far</span><span id="ovSaved" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Overall progress</span><span id="ovProg" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Required / month</span><span id="ovReq" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Planned / month</span><span id="ovPlan" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Gap</span><span id="ovGap" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Monthly planning</h3>
+                <label class="text-xs text-slate-600">Your budget for goals (per month)</label>
+                <div class="mt-1 flex items-center gap-2">
+                  <input id="planBudget" type="number" min="0" class="w-40 rounded-xl border border-slate-300 px-3 py-2 text-sm" value="45000">
+                  <button id="recalcPlan" class="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Recalculate</button>
+                </div>
+                <ul id="planList" class="mt-3 text-sm space-y-1.5"></ul>
+                <div class="mt-2 flex justify-between text-sm border-t border-slate-100 pt-2">
+                  <span>Budget used</span><span id="planUsed" class="font-semibold">—</span>
+                </div>
+              </div>
+
+              <div id="riskBox" class="hidden rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">
+                <strong>Heads up:</strong> Your current plan underfunds some goals. Consider raising your monthly budget or delaying lower-priority goals.
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Quick tips</h3>
+                <ul class="text-sm list-disc list-inside text-slate-700 space-y-1">
+                  <li>Closest due date first for must-haves (fees, moving, etc.).</li>
+                  <li>Keep an emergency fund at 3–6 months of expenses.</li>
+                  <li>Automate monthly transfers on salary day.</li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== New goal modal (simple inline) ===== -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/30 p-4 overflow-y-auto">
+    <div class="max-w-lg mx-auto mt-24 bg-white rounded-2xl shadow border border-slate-200">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="font-semibold">Add goal</h3>
+        <button id="closeModal" class="text-slate-500 hover:text-slate-700">✕</button>
+      </div>
+      <form id="goalForm" class="p-4 grid grid-cols-2 gap-3 text-sm">
+        <label class="col-span-2">
+          <span class="text-xs text-slate-600">Name</span>
+          <input name="name" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+        </label>
+        <label>
+          <span class="text-xs text-slate-600">Category</span>
+          <select name="category" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+            <option>Emergency</option><option>Travel</option><option>Education</option><option>Home</option><option>Gadget</option><option>Other</option>
+          </select>
+        </label>
+        <label>
+          <span class="text-xs text-slate-600">Due date</span>
+          <input type="date" name="due" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+        </label>
+        <label>
+          <span class="text-xs text-slate-600">Target (₹)</span>
+          <input type="number" min="0" name="target" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+        </label>
+        <label>
+          <span class="text-xs text-slate-600">Saved so far (₹)</span>
+          <input type="number" min="0" name="saved" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+        </label>
+        <label class="col-span-2">
+          <span class="text-xs text-slate-600">Planned monthly (₹)</span>
+          <input type="number" min="0" name="monthly" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+        </label>
+        <div class="col-span-2 flex justify-end gap-2">
+          <button type="button" id="cancelNew" class="rounded-xl border border-slate-300 px-3 py-2">Cancel</button>
+          <button class="rounded-xl bg-slate-900 text-white px-4 py-2">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Inline data + logic ===== -->
+  <script>
+    // --- Helpers
+    const INR = n => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(Math.round(n||0));
+    const today = new Date(); today.setHours(0,0,0,0);
+    const monthsBetween = (from, to) => {
+      const a = new Date(from.getFullYear(), from.getMonth(), 1);
+      const b = new Date(to.getFullYear(),   to.getMonth(),   1);
+      const diff = (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth());
+      return Math.max(0, diff || (to >= from ? 1 : 0)); // at least 1 if same month future
+    };
+    const fmtDate = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const chip = (txt, cls) => `<span class="px-2 py-0.5 rounded-full text-[11px] ${cls}">${txt}</span>`;
+
+    // --- Demo goals (no fetch)
+    let goals = [
+      { id:1, name:"Emergency Fund", category:"Emergency", target:300000, saved:90000,  monthly:10000, due:addMonths(today,10), completed:false },
+      { id:2, name:"Vacation — Goa", category:"Travel",    target:80000,  saved:15000,  monthly:8000,  due:addMonths(today,4),  completed:false },
+      { id:3, name:"New Laptop",     category:"Gadget",    target:120000, saved:20000,  monthly:12000, due:addMonths(today,6),  completed:false },
+      { id:4, name:"Home Downpayment",category:"Home",     target:1000000,saved:250000, monthly:25000, due:addMonths(today,24), completed:false },
+      { id:5, name:"Education Fund", category:"Education", target:500000, saved:50000,  monthly:12000, due:addMonths(today,18), completed:false },
+    ];
+    function addMonths(d, m){ const x=new Date(d); x.setMonth(x.getMonth()+m); return x; }
+
+    // --- Filters
+    const filterStatus = document.getElementById('filterStatus');
+    const filterCat = document.getElementById('filterCat');
+    [...new Set(goals.map(g=>g.category))].sort().forEach(c=>filterCat.append(new Option(c,c)));
+
+    // --- Modal
+    const modal = document.getElementById('modal');
+    const openModal = ()=> modal.classList.remove('hidden');
+    const closeModal = ()=> modal.classList.add('hidden');
+    document.getElementById('addBtn').onclick = openModal;
+    document.getElementById('closeModal').onclick = closeModal;
+    document.getElementById('cancelNew').onclick = closeModal;
+
+    document.getElementById('goalForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const g = {
+        id: Date.now(),
+        name: f.get('name').trim() || 'New Goal',
+        category: f.get('category') || 'Other',
+        due: new Date(f.get('due')),
+        target: +f.get('target') || 0,
+        saved: +f.get('saved') || 0,
+        monthly: +f.get('monthly') || 0,
+        completed: false
+      };
+      goals.push(g);
+      closeModal(); e.target.reset();
+      render();
+    });
+
+    // --- Core calcs
+    function enrich(g){
+      const remaining = Math.max(0, g.target - g.saved);
+      const monthsLeft = monthsBetween(today, g.due);
+      const needPerMonth = monthsLeft>0 ? Math.ceil(remaining / monthsLeft) : remaining;
+      const progress = g.target>0 ? Math.round((g.saved/g.target)*100) : 0;
+      let status = 'On track', color='bg-emerald-100 text-emerald-700';
+      if (g.completed || remaining===0){ status='Completed'; color='bg-slate-100 text-slate-700'; }
+      else if (monthsLeft===0 && remaining>0){ status='Overdue'; color='bg-rose-100 text-rose-700'; }
+      else if (g.monthly < needPerMonth){ status='At risk'; color='bg-rose-100 text-rose-700'; }
+      else if (g.monthly < needPerMonth*1.1){ status='Slight risk'; color='bg-amber-100 text-amber-700'; }
+      return {...g, remaining, monthsLeft, needPerMonth, progress, status, color};
+    }
+
+    function filteredGoals(){
+      return goals
+        .filter(g => filterStatus.value==='all'
+            || (filterStatus.value==='active' && !g.completed)
+            || (filterStatus.value==='completed' && g.completed))
+        .filter(g => filterCat.value==='all' || g.category===filterCat.value)
+        .map(enrich)
+        .sort((a,b)=> a.completed - b.completed || a.monthsLeft - b.monthsLeft);
+    }
+
+    // --- Rendering
+    function progressBar(pct){
+      const w = Math.max(2, Math.min(100, pct));
+      return `
+        <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-2.5 rounded-full bg-emerald-500" style="width:${w}%"></div>
+        </div>`;
+    }
+
+    function renderList(items){
+      document.getElementById('goalCount').textContent = items.length;
+      const wrap = document.getElementById('goalList');
+      if (!items.length){ wrap.innerHTML = `<div class="py-10 text-center text-sm text-slate-500">No goals match your filters.</div>`; return; }
+
+      wrap.innerHTML = items.map(g=>{
+        const riskChip = chip(g.status, `${g.color}`);
+        const dueChip  = chip(`Due ${fmtDate(g.due)}`,'bg-indigo-100 text-indigo-700');
+        const catChip  = chip(g.category,'bg-slate-100 text-slate-700');
+        return `
+          <article class="border border-slate-200 rounded-xl p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-medium">${g.name}</div>
+                <div class="mt-1 flex gap-1">${catChip}${dueChip}${riskChip}</div>
+              </div>
+              <div class="text-right text-sm">
+                <div class="font-semibold">${INR(g.saved)} <span class="text-slate-400">/ ${INR(g.target)}</span></div>
+                <div class="text-[11px] text-slate-500">Remaining: ${INR(g.remaining)}</div>
+              </div>
+            </div>
+
+            <div class="mt-3">${progressBar(g.progress)}</div>
+            <div class="mt-2 flex items-center justify-between text-xs text-slate-600">
+              <div>Progress: <span class="font-semibold text-slate-800">${g.progress}%</span></div>
+              <div>Months left: <span class="font-semibold text-slate-800">${g.monthsLeft}</span></div>
+            </div>
+
+            <div class="mt-3 grid sm:grid-cols-3 gap-2 text-sm">
+              <label class="flex items-center gap-2">
+                <span class="text-slate-600 w-28">Saved so far</span>
+                <input data-act="saved" data-id="${g.id}" type="number" min="0" value="${g.saved}" class="w-full rounded-lg border border-slate-300 px-2 py-1">
+              </label>
+              <label class="flex items-center gap-2">
+                <span class="text-slate-600 w-28">Monthly plan</span>
+                <input data-act="monthly" data-id="${g.id}" type="number" min="0" value="${g.monthly}" class="w-full rounded-lg border border-slate-300 px-2 py-1">
+              </label>
+              <div class="flex items-center justify-between sm:justify-end gap-2">
+                <div class="text-xs text-slate-600">Need / month: <span class="font-semibold text-slate-800">${INR(g.needPerMonth)}</span></div>
+                <button data-act="complete" data-id="${g.id}" class="rounded-lg border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50">${g.completed?'Undo':'Mark reached'}</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      wrap.querySelectorAll('input,button').forEach(el=>{
+        el.addEventListener('change', onInteract);
+        el.addEventListener('click', (e)=> { if (e.target.dataset.act==='complete') onInteract(e); });
+      });
+    }
+
+    function onInteract(e){
+      const id = +e.target.dataset.id;
+      const act = e.target.dataset.act;
+      const g = goals.find(x=>x.id===id);
+      if (!g) return;
+
+      if (act==='saved')   g.saved   = Math.max(0, +e.target.value || 0);
+      if (act==='monthly') g.monthly = Math.max(0, +e.target.value || 0);
+      if (act==='complete'){
+        if (g.completed){ g.completed = false; } else { g.completed = true; g.saved = g.target; }
+      }
+      render();
+    }
+
+    // --- Overview calcs
+    function renderOverview(items){
+      const active = items.filter(g=>!g.completed);
+      const totTarget = active.reduce((s,g)=>s+g.target,0);
+      const totSaved  = active.reduce((s,g)=>s+g.saved,0);
+      const totPlan   = active.reduce((s,g)=>s+g.monthly,0);
+      const reqPerMonth = active.reduce((s,g)=>s+enrich(g).needPerMonth,0);
+      const prog = totTarget? Math.round(totSaved/totTarget*100) : 0;
+      document.getElementById('ovTarget').textContent = INR(totTarget);
+      document.getElementById('ovSaved').textContent  = INR(totSaved);
+      document.getElementById('ovProg').textContent   = `${prog}%`;
+      document.getElementById('ovReq').textContent    = INR(reqPerMonth);
+      document.getElementById('ovPlan').textContent   = INR(totPlan);
+      const gap = Math.max(0, reqPerMonth - totPlan);
+      document.getElementById('ovGap').innerHTML      = gap>0 ? `<span class="text-rose-600 font-semibold">${INR(gap)}</span>` : `<span class="text-emerald-600 font-semibold">On track</span>`;
+      document.getElementById('riskBox').classList.toggle('hidden', gap===0);
+    }
+
+    // --- Monthly planning (allocate your budget)
+    function renderPlan(items){
+      const budget = Math.max(0, +document.getElementById('planBudget').value || 0);
+      const active = items.filter(g=>!g.completed).map(enrich).sort((a,b)=> a.monthsLeft - b.monthsLeft);
+      const needMap = {};
+      active.forEach(g=> needMap[g.id] = g.needPerMonth);
+
+      let remaining = budget;
+      const alloc = {};
+      for (const g of active){
+        const need = needMap[g.id];
+        const take = Math.min(need, remaining);
+        alloc[g.id] = take;
+        remaining -= take;
+      }
+
+      const used = budget - remaining;
+      document.getElementById('planUsed').textContent = INR(used);
+
+      document.getElementById('planList').innerHTML = active.length
+        ? active.map(g=>{
+            const given = alloc[g.id] || 0;
+            const ok = given >= g.needPerMonth;
+            const cls = ok ? 'text-emerald-700' : 'text-rose-700';
+            const tag = ok ? chip('ok','bg-emerald-100 text-emerald-700') : chip('at risk','bg-rose-100 text-rose-700');
+            return `<li class="flex justify-between"><span>${g.name}</span><span class="font-semibold ${cls}">${INR(given)} / ${INR(g.needPerMonth)}</span> ${tag}</li>`;
+          }).join('')
+        : '<li class="text-slate-500">No active goals.</li>';
+    }
+
+    // --- Main render
+    function render(){
+      const items = filteredGoals();
+      renderList(items);
+      renderOverview(items);
+      renderPlan(items);
+    }
+
+    // Events
+    filterStatus.addEventListener('change', render);
+    filterCat.addEventListener('change', render);
+    document.getElementById('recalcPlan').addEventListener('click', render);
+
+    // Start
+    render();
+  </script>
+</body>
+</html>

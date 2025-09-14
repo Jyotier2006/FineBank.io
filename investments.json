@@ -1,0 +1,5 @@
+{
+  "stocks": [{ "scrip": "INFY", "value": 220000 }, { "scrip": "TCS", "value": 260000 }],
+  "mutualFunds": [{ "name": "Nifty 50 Index", "value": 340000 }],
+  "bonds": [{ "name": "GOI 2030", "value": 100000 }]
+}

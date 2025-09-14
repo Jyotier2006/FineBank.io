@@ -1,0 +1,92 @@
+{
+  "transactions": [
+    {
+      "date": "2025-09-20",
+      "merchant": "Local Market",
+      "category": "Groceries",
+      "payment_method": "Cash",
+      "amount": 780
+    },
+    {
+      "date": "2025-09-18",
+      "merchant": "Zudio",
+      "category": "Shopping",
+      "payment_method": "Card",
+      "amount": 1299
+    },
+    {
+      "date": "2025-09-16",
+      "merchant": "Subway",
+      "category": "Eating Out",
+      "payment_method": "UPI",
+      "amount": 450
+    },
+    {
+      "date": "2025-09-14",
+      "merchant": "H&M",
+      "category": "Shopping",
+      "payment_method": "Card",
+      "amount": 1899
+    },
+    {
+      "date": "2025-09-12",
+      "merchant": "HP Fuel",
+      "category": "Transport",
+      "payment_method": "Card",
+      "amount": 2200
+    },
+    {
+      "date": "2025-09-10",
+      "merchant": "MedPlus",
+      "category": "Health",
+      "payment_method": "UPI",
+      "amount": 900
+    },
+    {
+      "date": "2025-09-08",
+      "merchant": "INOX",
+      "category": "Entertainment",
+      "payment_method": "Card",
+      "amount": 650
+    },
+    {
+      "date": "2025-09-07",
+      "merchant": "Vishal Mega Mart",
+      "category": "Groceries",
+      "payment_method": "UPI",
+      "amount": 1890
+    },
+    {
+      "date": "2025-09-05",
+      "merchant": "Domino's",
+      "category": "Eating Out",
+      "payment_method": "UPI",
+      "amount": 780
+    },
+    {
+      "date": "2025-09-05",
+      "merchant": "Amazon",
+      "category": "Shopping",
+      "payment_method": "Card",
+      "amount": 3499
+    },
+    {
+      "date": "2025-09-03",
+      "merchant": "Uber",
+      "category": "Transport",
+      "payment_method": "Card",
+      "amount": 320
+    },
+    {
+      "date": "2025-09-02",
+      "merchant": "Big Bazaar",
+      "category": "Groceries",
+      "payment_method": "UPI",
+      "amount": 2450
+    }
+  ],
+  "totals": {
+    "transaction_count": 12,
+    "amount_spent": 17117
+  }
+}

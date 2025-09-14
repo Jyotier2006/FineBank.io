@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bills — FineBank.io</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Sidebar -->
+      <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 grid place-items-center">₹</div>
+          <div class="font-semibold">FineBank.io</div>
+        </div>
+        <nav class="space-y-1 text-sm">
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="index.html">Overview</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="transaction.html">Transactions</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="bills.html">Bills</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="expenses.html">Expenses</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="goals.html">Goals</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="settings.html">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+        <!-- Header / Filters -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold">Bills</h1>
+            <p class="text-xs text-slate-500">Inline demo bills. Mark paid / toggle autopay — calculations update instantly.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+              <input id="q" class="w-48 rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm" placeholder="Search bill/category">
+            </div>
+
+            <select id="month" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All months</option>
+            </select>
+
+            <select id="cat" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All categories</option>
+            </select>
+
+            <select id="status" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All statuses</option>
+              <option value="dueSoon">Due soon (≤7d)</option>
+              <option value="overdue">Overdue</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+              <option value="autopay">Autopay</option>
+            </select>
+
+            <button id="clear" class="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Clear</button>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="grid lg:grid-cols-3 gap-4 mt-6">
+          <!-- Left: bill list -->
+          <section class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 p-4 shadow">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold">Bills</h2>
+              <div class="text-xs text-slate-500"><span id="count">0</span> items</div>
+            </div>
+            <div id="billList" class="divide-y divide-slate-100"></div>
+          </section>
+
+          <!-- Right: calculations -->
+          <aside class="lg:col-span-1">
+            <div class="sticky top-6 space-y-4">
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Totals (current view)</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Unpaid (all)</span><span id="unpaid" class="font-semibold text-slate-800">—</span></li>
+                  <li class="flex justify-between"><span>Overdue</span><span id="overdueAmt" class="font-semibold text-rose-600">—</span></li>
+                  <li class="flex justify-between"><span>Due in next 7 days</span><span id="due7" class="font-semibold text-amber-600">—</span></li>
+                  <li class="flex justify-between"><span>Paid this month</span><span id="paidAmt" class="font-semibold text-emerald-600">—</span></li>
+                  <li class="flex justify-between"><span>Autopay coverage</span><span id="autopayCov" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Monthly plan</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Recurring total</span><span id="recurring" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>One-time total</span><span id="oneTime" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>All bills this month</span><span id="monthTotal" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div id="alertBox" class="hidden rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">
+                <strong>Heads up:</strong> You have overdue bills. Consider paying those first.
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== Inline Data + Logic ===== -->
+  <script>
+    // ---------- Helpers ----------
+    const INR = n => new Intl.NumberFormat('en-IN',{ style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);
+    const fmtDate = d => new Date(d).toLocaleDateString('en-IN',{ day:'2-digit', month:'short' });
+    const yyyymm = d => new Date(d).toISOString().slice(0,7);
+    const today = () => new Date(new Date().toDateString()); // strip time
+    const addDays = (d, days) => { const x = new Date(d); x.setDate(x.getDate()+days); return x; };
+    const diffDays = (a,b) => Math.round((a - b)/(1000*60*60*24));
+    const isSameMonth = (d, ym) => yyyymm(d) === ym;
+
+    // ---------- Seed demo bills (inline, no fetch) ----------
+    // For recurring items we compute the next due date based on "dayOfMonth".
+    const now = today();
+    function nextDue(dayOfMonth) {
+      const y = now.getFullYear(), m = now.getMonth();
+      const tryThisMonth = new Date(y, m, dayOfMonth);
+      if (tryThisMonth >= now) return tryThisMonth;
+      return new Date(y, m+1, dayOfMonth);
+    }
+
+    let bills = [
+      { id:1,  name:'Rent',            category:'Housing',      amount:28000,  recurrence:'monthly',  dueDate: nextDue(1),  autopay:false, paid:false },
+      { id:2,  name:'Electricity',     category:'Utilities',    amount:1350,   recurrence:'monthly',  dueDate: nextDue(10), autopay:false, paid:false },
+      { id:3,  name:'Water',           category:'Utilities',    amount:420,    recurrence:'monthly',  dueDate: nextDue(12), autopay:false, paid:false },
+      { id:4,  name:'Airtel Fiber',    category:'Telecom',      amount:999,    recurrence:'monthly',  dueDate: nextDue(5),  autopay:true,  paid:false },
+      { id:5,  name:'Netflix',         category:'Subscriptions',amount:649,    recurrence:'monthly',  dueDate: nextDue(15), autopay:true,  paid:false },
+      { id:6,  name:'Gym',             category:'Health',       amount:1200,   recurrence:'monthly',  dueDate: nextDue(18), autopay:false, paid:false },
+      { id:7,  name:'Credit Card',     category:'Debt',         amount:15000,  recurrence:'monthly',  dueDate: nextDue(25), autopay:false, paid:false },
+      { id:8,  name:'Car Insurance',   category:'Insurance',    amount:7200,   recurrence:'yearly',   dueDate: new Date(now.getFullYear(), now.getMonth(), 27), autopay:false, paid:false },
+      { id:9,  name:'Figma',           category:'Subscriptions',amount:150,    recurrence:'monthly',  dueDate: nextDue(20), autopay:true,  paid:false },
+      { id:10, name:'Adobe',           category:'Subscriptions',amount:559,    recurrence:'yearly',   dueDate: new Date(now.getFullYear(), now.getMonth()+1, 16), autopay:false, paid:false },
+      { id:11, name:'One-time Repair', category:'Home',         amount:2800,   recurrence:'one-time', dueDate: addDays(now,-3), autopay:false, paid:false }, // example overdue
+    ];
+
+    // ---------- UI refs ----------
+    const qEl = document.getElementById('q');
+    const monthEl = document.getElementById('month');
+    const catEl = document.getElementById('cat');
+    const statusEl = document.getElementById('status');
+    const listEl = document.getElementById('billList');
+
+    // ---------- Populate filters ----------
+    const months = [...new Set(bills.map(b=>yyyymm(b.dueDate)))].sort().reverse();
+    months.forEach(m => monthEl.append(new Option(m, m)));
+    if (months.length) monthEl.value = months[0];
+
+    const cats = [...new Set(bills.map(b=>b.category))].sort();
+    cats.forEach(c => catEl.append(new Option(c, c)));
+
+    document.getElementById('clear').addEventListener('click', () => {
+      qEl.value=''; catEl.value='all'; statusEl.value='all'; monthEl.value = months[0] || 'all';
+      render();
+    });
+    [qEl, monthEl, catEl, statusEl].forEach(el => el.addEventListener('input', render));
+
+    // ---------- Status helpers ----------
+    function statusOf(bill){
+      const d = today();
+      if (bill.paid) return 'paid';
+      if (bill.dueDate < d) return 'overdue';
+      if (diffDays(bill.dueDate, d) <= 7) return 'dueSoon';
+      return 'unpaid';
+    }
+
+    // ---------- Rendering ----------
+    function filtered(){
+      const q = qEl.value.trim().toLowerCase();
+      const m = monthEl.value;
+      const c = catEl.value;
+      const s = statusEl.value;
+
+      return bills.filter(b=>{
+        if (m !== 'all' && !isSameMonth(b.dueDate, m)) return false;
+        if (c !== 'all' && b.category !== c) return false;
+        if (q && !(b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q))) return false;
+        const st = statusOf(b);
+        if (s==='dueSoon' && st!=='dueSoon') return false;
+        if (s==='overdue' && st!=='overdue') return false;
+        if (s==='unpaid' && st!=='unpaid') return false;
+        if (s==='paid' && st!=='paid') return false;
+        if (s==='autopay' && !b.autopay) return false;
+        return true;
+      }).sort((a,b)=> a.dueDate - b.dueDate);
+    }
+
+    function renderList(items){
+      document.getElementById('count').textContent = items.length;
+      if (!items.length) { listEl.innerHTML = `<div class="py-10 text-center text-sm text-slate-500">No bills match your filters.</div>`; return; }
+
+      listEl.innerHTML = items.map(b=>{
+        const st = statusOf(b);
+        const chip =
+          b.paid ? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-700">Paid</span>` :
+          st==='overdue' ? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-rose-100 text-rose-700">Overdue</span>` :
+          st==='dueSoon' ? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-700">Due in ${diffDays(b.dueDate, today())}d</span>` :
+          `<span class="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">Upcoming</span>`;
+
+        const auto = b.autopay ? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-indigo-100 text-indigo-700">Autopay</span>` : '';
+
+        return `
+          <div class="py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-slate-100 grid place-items-center text-xs font-semibold">${b.category[0]}</div>
+              <div>
+                <div class="font-medium text-sm">${b.name}</div>
+                <div class="text-[11px] text-slate-500">${b.category} • due ${fmtDate(b.dueDate)}</div>
+                <div class="mt-1 flex gap-1">${chip}${auto? ' '+auto:''}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="text-sm font-semibold ${b.paid?'text-emerald-600':'text-slate-800'}">${INR(b.amount)}</div>
+
+              <label class="text-[11px] text-slate-600 flex items-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" ${b.autopay?'checked':''} data-act="autopay" data-id="${b.id}" class="accent-indigo-600">
+                Autopay
+              </label>
+
+              <button data-act="snooze" data-id="${b.id}" class="text-[11px] px-2 py-1 rounded-lg border border-slate-300 hover:bg-slate-50">Snooze 3d</button>
+
+              <button data-act="togglePaid" data-id="${b.id}" class="text-[11px] px-2 py-1 rounded-lg ${b.paid?'bg-slate-100 border border-slate-300':'bg-emerald-600 text-white'}">
+                ${b.paid? 'Unpay' : 'Mark paid'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // actions
+      listEl.querySelectorAll('button, input[type="checkbox"]').forEach(el=>{
+        el.addEventListener('click', e=>{
+          const id = +el.dataset.id;
+          const bill = bills.find(x=>x.id===id);
+          if (!bill) return;
+
+          const act = el.dataset.act;
+          if (act==='togglePaid'){ bill.paid = !bill.paid; }
+          if (act==='snooze'){ bill.dueDate = addDays(bill.dueDate, 3); }
+          if (act==='autopay'){ bill.autopay = el.checked; }
+
+          render();
+        });
+      });
+    }
+
+    function renderCalcs(items){
+      const dNow = today();
+
+      const unpaid = items.filter(b=>!b.paid);
+      const overdue = unpaid.filter(b=>b.dueDate < dNow);
+      const due7 = unpaid.filter(b=>diffDays(b.dueDate, dNow) <= 7 && b.dueDate >= dNow);
+      const paid = items.filter(b=>b.paid);
+
+      // Monthly breakdown (for selected month only, not just unpaid)
+      const ym = monthEl.value === 'all' ? null : monthEl.value;
+      const inMonth = items.filter(b => ym ? isSameMonth(b.dueDate, ym) : true);
+      const recurring = inMonth.filter(b=>b.recurrence!=='one-time');
+      const oneTime = inMonth.filter(b=>b.recurrence==='one-time');
+
+      // Autopay coverage within current view (recurring bills only)
+      const recAll = items.filter(b=>b.recurrence!=='one-time');
+      const autoAmt = recAll.filter(b=>b.autopay).reduce((s,b)=>s+b.amount,0);
+      const recAmt = recAll.reduce((s,b)=>s+b.amount,0);
+      const autoPct = recAmt ? Math.round(autoAmt/recAmt*100) : 0;
+
+      // Set UI
+      setText('unpaid', unpaid.length ? INR(unpaid.reduce((s,b)=>s+b.amount,0)) : '—');
+      setText('overdueAmt', overdue.length ? INR(overdue.reduce((s,b)=>s+b.amount,0)) : '—');
+      setText('due7', due7.length ? INR(due7.reduce((s,b)=>s+b.amount,0)) : '—');
+      setText('paidAmt', paid.length ? INR(paid.reduce((s,b)=>s+b.amount,0)) : '—');
+
+      setText('recurring', recurring.length ? INR(recurring.reduce((s,b)=>s+b.amount,0)) : '—');
+      setText('oneTime', oneTime.length ? INR(oneTime.reduce((s,b)=>s+b.amount,0)) : '—');
+      const monthTotal = inMonth.length ? inMonth.reduce((s,b)=>s+b.amount,0) : 0;
+      setText('monthTotal', monthTotal ? INR(monthTotal) : '—');
+
+      const cov = recAmt ? `${autoPct}% of ₹${recAmt.toLocaleString('en-IN')}` : '—';
+      setText('autopayCov', cov);
+
+      // Alert
+      const alert = document.getElementById('alertBox');
+      if (overdue.length) { alert.classList.remove('hidden'); }
+      else { alert.classList.add('hidden'); }
+    }
+
+    function setText(id, val){ const el = document.getElementById(id); if (el) el.textContent = val; }
+
+    function render(){
+      const items = filtered();
+      renderList(items);
+      renderCalcs(items);
+    }
+
+    // First render
+    render();
+  </script>
+</body>
+</html>

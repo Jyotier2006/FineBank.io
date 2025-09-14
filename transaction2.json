@@ -1,0 +1,116 @@
+{
+  "results": {
+    "transactions": [
+      {
+        "date": "2025-09-27",
+        "merchant": "Myntra",
+        "category": "Shopping",
+        "amount": -2899
+      },
+      {
+        "date": "2025-09-25",
+        "merchant": "IRCTC Refund",
+        "category": "Income",
+        "amount": 850
+      },
+      {
+        "date": "2025-09-23",
+        "merchant": "Starbucks",
+        "category": "Food",
+        "amount": -310
+      },
+      {
+        "date": "2025-09-22",
+        "merchant": "Rent",
+        "category": "Housing",
+        "amount": -28000
+      },
+      {
+        "date": "2025-09-17",
+        "merchant": "Apollo Pharmacy",
+        "category": "Health",
+        "amount": -740
+      },
+      {
+        "date": "2025-09-14",
+        "merchant": "Indian Oil",
+        "category": "Transport",
+        "amount": -3200
+      },
+      {
+        "date": "2025-09-10",
+        "merchant": "Swiggy",
+        "category": "Food",
+        "amount": -430
+      },
+      {
+        "date": "2025-09-09",
+        "merchant": "HDFC Credit Card",
+        "category": "Transfer",
+        "amount": 15000
+      },
+      {
+        "date": "2025-09-06",
+        "merchant": "Amazon",
+        "category": "Shopping",
+        "amount": -2199
+      },
+      {
+        "date": "2025-09-05",
+        "merchant": "Airtel Fiber",
+        "category": "Utilities",
+        "amount": -999
+      },
+      {
+        "date": "2025-09-04",
+        "merchant": "Zomato",
+        "category": "Food",
+        "amount": -520
+      },
+      {
+        "date": "2025-09-03",
+        "merchant": "Uber",
+        "category": "Transport",
+        "amount": -240
+      },
+      {
+        "date": "2025-09-02",
+        "merchant": "Big Bazaar",
+        "category": "Groceries",
+        "amount": -1840
+      },
+      {
+        "date": "2025-09-01",
+        "merchant": "Salary • FINEbank",
+        "category": "Income",
+        "amount": 180000
+      }
+    ],
+    "totals": {
+      "income": 180850,
+      "expenses": 41377,
+      "net_cash_flow": 139473,
+      "avg_daily_spend": 1379,
+      "median_transaction": 999,
+      "p90_transaction": 28000,
+      "transaction_count": 14
+    },
+    "insights": {
+      "top_category_by_spend": {
+        "category": "Housing",
+        "amount": 28000
+      },
+      "top_merchant_by_spend": {
+        "merchant": "Rent",
+        "amount": 28000
+      },
+      "essential_vs_discretionary": {
+        "essential_percent": 85,
+        "discretionary_percent": 15
+      },
+      "recurring_bills_est": 28999,
+      "estimated_savings_rate_percent": 77
+    },
+    "notes": "All numbers recompute when you filter or search."
+  }
+}

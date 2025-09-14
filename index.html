@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Let AI Speak to Your Money — Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    function buildAIContext() {
+  const p = getPerms();
+  const d = REMOTE || MOCK;
+  const ctx = {};
+  if (p.assets)        ctx.assets = d.assets;
+  if (p.liabilities)   ctx.liabilities = d.liabilities;
+  if (p.transactions)  ctx.transactions = d.transactions;
+  if (p.epf)           ctx.epf = d.epf;
+  if (p.creditScore)   ctx.creditScore = d.creditScore;
+  if (p.investments)   ctx.investments = d.investments;
+  return ctx;
+}
+
+async function askAI(question){
+  const context = buildAIContext();
+  const prompt = `You are a personal finance assistant. Use only the provided JSON context when answering.
+
+CONTEXT (JSON):
+${JSON.stringify(context, null, 2)}
+
+USER QUESTION:
+${question}
+
+ASSISTANT:`.trim();
+
+  const r = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3',
+      prompt,
+      stream: false
+    })
+  });
+
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data.response) throw new Error(data.error || `HTTP ${r.status}`);
+  return data.response.trim();
+}
+
+
+function makeWeekPattern() {
+  // Mon..Sun weights; weekends heavier
+  const pat = [1.00, 0.92, 0.96, 1.08, 1.04, 1.18, 1.22];
+  const sum = pat.reduce((a,b)=>a+b,0);
+  return pat.map(x => x / sum); // normalise to 1.0 over the week
+}
+function weeklySeriesFromMonthly(monthlyAmount) {
+  const dailyAvg = monthlyAmount / 30;      // simple mapping month -> day
+  const pat = makeWeekPattern();            // split across weekdays
+  return pat.map(w => Math.round(dailyAvg * 7 * w)); // 7-day slice
+}
+function weekPattern() {
+  // Mon..Sun weights; weekends heavier (deterministic)
+  const w = [1.00, 0.92, 0.96, 1.08, 1.04, 1.18, 1.22];
+  const s = w.reduce((a,b)=>a+b,0);
+  return w.map(x=>x/s); // sum = 1.0
+}
+function splitMonthlyToWeek(monthly) {
+  const pat = weekPattern();
+  const weekTotal = monthly / 30 * 7; // simple month→week mapping
+  return pat.map(p => Math.round(weekTotal * p));
+}
+function buildAIContext() {
+  const p = getPerms();
+  const d = REMOTE || MOCK;
+  const ctx = {};
+  if (p.assets)        ctx.assets        = d.assets;
+  if (p.liabilities)   ctx.liabilities   = d.liabilities;
+  if (p.transactions)  ctx.transactions  = d.transactions;
+  if (p.epf)           ctx.epf           = d.epf;
+  if (p.creditScore)   ctx.creditScore   = d.creditScore;
+  if (p.investments)   ctx.investments   = d.investments;
+  return ctx;
+}
+async function askAI(question){
+  const context = buildAIContext();
+  const r = await fetch('http://localhost:5050/api/ask', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ question, context })
+  });
+  const data = await r.json();
+  if (!r.ok || !data.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data.text;
+}
+
+</script>
+
+  <style>
+    /* ===== Animations & polish ===== */
+    @keyframes fadeInDown { from { opacity:0; transform: translateY(-10px);} to { opacity:1; transform: translateY(0);} }
+    @keyframes shimmer { 0% {background-position:-200% 0;} 100% {background-position:200% 0;} }
+    @keyframes float { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-4px);} }
+    .link-anim { position:relative; }
+    .link-anim::after { content:""; position:absolute; left:0; bottom:-6px; height:2px; width:0; background:linear-gradient(90deg,#6366f1,#a855f7,#f43f5e); transition:width .35s ease; border-radius:999px; }
+    .link-anim:hover::after { width:100%; }
+    .btn-shimmer { background-image: linear-gradient(90deg,#4f46e5 0%,#7c3aed 50%,#4f46e5 100%); background-size:200% auto; animation: shimmer 3s linear infinite; }
+    .card { animation: fadeInDown .5s ease forwards; }
+    /* Mobile panel */
+    .nav-panel { transform: translateY(-6px); opacity:0; pointer-events:none; transition: all .25s ease; }
+    .nav-panel.open { transform: translateY(0); opacity:1; pointer-events:auto; }
+    /* Header shadow when scrolled */
+    header.sticky.scrolled { box-shadow: 0 8px 30px rgba(2,6,23,.08); background: rgba(255,255,255,.9); }
+    /* Simple sparkline stroke fallback color via currentColor */
+    .spark polyline { stroke: currentColor; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800"><!-- Elfsight AI Chatbot | Untitled AI Chatbot -->
+<script src="https://elfsightcdn.com/platform.js" async></script>
+<div class="elfsight-app-9cd9456c-fb40-4403-bf06-146338e49d61" data-elfsight-app-lazy></div>
+  <!-- ===== Header / Nav ===== -->
+  <header class="sticky top-0 z-40 backdrop-blur bg-white/70 border-b border-slate-200">
+  <div class="h-1 bg-gradient-to-r from-indigo-600 via-fuchsia-500 to-rose-500"></div>
+
+  <!-- Peer wrapper so the mobile nav can react to the checkbox -->
+  <div class="peer">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Brand -->
+        <a href="#" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg transition-transform duration-300 group-hover:rotate-6">₹</div>
+          <span class="font-semibold text-lg tracking-wide bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">FineBank.io</span>
+        </a>
+
+        <!-- Desktop nav -->
+        <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+          <a href="#features" class="hover:text-indigo-700 link-anim">Features</a>
+          <a href="#permissions" class="hover:text-indigo-700 link-anim">Permissions</a>
+          <a href="#insights" class="hover:text-indigo-700 link-anim">Insights</a>
+          <a href="#chat" class="hover:text-indigo-700 link-anim">Chat</a>
+          <a href="#privacy" class="hover:text-indigo-700 link-anim">Privacy</a>
+        </nav>
+
+        <!-- Right buttons -->
+        <div class="flex items-center gap-2">
+          <button id="loadDemoBtn" class="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-white text-sm shadow hover:scale-[1.02] active:scale-[.98] focus:ring-2 focus:ring-indigo-400 btn-shimmer">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+            Load Demo Data
+          </button>
+
+          <!-- CSS-only mobile toggle -->
+          <input id="nav-toggle" type="checkbox" class="hidden peer" />
+          <label for="nav-toggle"
+            class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300 hover:bg-slate-100 cursor-pointer"
+            aria-label="Open menu">
+            <!-- Hamburger -->
+            <svg class="w-5 h-5 text-slate-700 peer-checked:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <!-- Close -->
+            <svg class="w-5 h-5 text-slate-700 hidden peer-checked:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile panel (reacts to the checkbox above) -->
+    <div class="md:hidden max-h-0 opacity-0 overflow-hidden pointer-events-none transition-all duration-300
+                peer-checked:max-h-96 peer-checked:opacity-100 peer-checked:pointer-events-auto
+                bg-white/95 border-t border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid gap-3 text-sm">
+        <a href="#features" class="px-3 py-2 rounded-lg hover:bg-slate-100">Features</a>
+        <a href="#permissions" class="px-3 py-2 rounded-lg hover:bg-slate-100">Permissions</a>
+        <a href="#insights" class="px-3 py-2 rounded-lg hover:bg-slate-100">Insights</a>
+        <a href="#chat" class="px-3 py-2 rounded-lg hover:bg-slate-100">Chat</a>
+        <a href="#privacy" class="px-3 py-2 rounded-lg hover:bg-slate-100">Privacy</a>
+        <button id="loadDemoBtnMobile" class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-white text-sm shadow btn-shimmer">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+          Load Demo Data
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- ===== Dashboard (reference-inspired) ===== -->
+  <section id="dashboard" class="py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-12 gap-6">
+        <!-- Sidebar -->
+        <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+          <div class="flex items-center gap-2 mb-6">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">₹</div>
+            <div class="font-semibold">FineBank.io</div>
+          </div>
+          <nav class="space-y-1 text-sm">
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="index.html">Overview</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="balances.html">Balances</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="transaction.html">Transactions</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="bills.html">Bills</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="expenses.html">Expenses</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="goals.html">Goals</a>
+            <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="settings.html">Settings</a>
+          </nav>
+          <div class="mt-8 border-t border-white/10 pt-4 text-xs">
+            <a class="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10" href="login.html" >Logout</a>
+            <div class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+              
+              <div>
+                <div class="flex items-center gap-3">
+  <!-- Profile Image -->
+  <img src="neel.jpg" alt="Neel Patel" 
+       class="w-10 h-10 rounded-full object-cover border border-slate-50" />
+
+  <!-- Name + Subtext -->
+  <div>
+    <div class="font-medium">Neel Patel</div>
+    <a class="text-[10px] text-slate-100" href="settings.html">View profile</a>
+  </div>
+</div>
+
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="col-span-12 md:col-span-9 lg:col-span-10">
+          <!-- Top bar -->
+          <div class="rounded-2xl bg-white border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow">
+            <div>
+              <h2 class="text-xl font-semibold">Hello, Neel</h2>
+              <div class="text-xs text-slate-500" id="dash-date"></div>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-72">
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Row -->
+          <div class="grid md:grid-cols-3 gap-4 mt-6">
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="text-xs text-slate-500">Total Balance</div>
+              <div  class="text-2xl font-semibold mt-1">₹50,10,000</div>
+              <div class="mt-3 text-xs text-slate-500">All Accounts</div>
+              <div class="mt-2 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2"><div class="w-8 h-5 rounded bg-emerald-600"></div> <span>Primary</span></div>
+                <div  class="font-medium">₹3,00,000</div>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="text-xs text-slate-500">Goals</div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div id="dash-goal-total" class="text-2xl font-semibold mt-1">—</div>
+                  <div class="text-xs text-slate-500">This month target</div>
+                </div>
+                <!-- simple gauge -->
+                <svg viewBox="0 0 120 60" class="w-32 h-28">
+                  <path d="M10 50 A40 40 0 0 1 110 50" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+                  <path id="dash-gauge" d="M10 50 A40 40 0 0 1 110 50" fill="none" stroke="#10b981" stroke-width="12" stroke-dasharray="0 251"/>
+                </svg>
+              </div>
+              <div class="text-xs text-slate-500">Target vs Achievement</div>
+            </div>
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="flex items-center justify-between">
+                <div class="text-xs text-slate-500">Upcoming Bills</div>
+                <a href="bills.html" class="text-xs text-indigo-600">View all</a>
+              </div>
+              <div id="dash-upcoming" class="mt-3 space-y-2 text-sm"></div>
+            </div>
+          </div>
+
+          <!-- Middle Row -->
+          <div class="grid lg:grid-cols-2 gap-4 mt-6">
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-semibold">Recent Transactions</div>
+                <a href="transaction.html" class="text-xs text-indigo-600">View all</a>
+              </div>
+              <div id="dash-recent" class="mt-3 divide-y divide-slate-100"></div>
+            </div>
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-semibold">Weekly Comparison</div>
+                <div class="text-xs text-slate-500"><span class="inline-block w-2 h-2 bg-emerald-600 rounded-full mr-1"></span>This week <span class="ml-3 inline-block w-2 h-2 bg-slate-300 rounded-full mr-1"></span>Last week</div>
+              </div>
+              <svg id="dash-bars" viewBox="0 0 420 180" class="mt-3 w-full"></svg>
+            </div>
+          </div>
+
+          <!-- Bottom Row -->
+          <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow mt-6">
+            <div class="text-sm font-semibold mb-2">Expenses Breakdown</div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+              <div class="rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-500">Housing</div><div id="bd-housing" class="font-semibold">—</div></div>
+              <div class="rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-500">Food</div><div id="bd-food" class="font-semibold">—</div></div>
+              <div class="rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-500">Transport</div><div id="bd-transport" class="font-semibold">—</div></div>
+              <div class="rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-500">Shopping</div><div id="bd-shopping" class="font-semibold">—</div></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section id="features" class="py-12 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl sm:text-3xl font-bold">What this prototype demonstrates</h2>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article class="rounded-2xl bg-white shadow p-6 card"><h3 class="font-semibold">Mock Financial MCP</h3><p class="mt-2 text-sm text-slate-600">Pulls structured data from a mock server (here: in‑memory JSON): assets, liabilities, transactions, EPF, credit score, investments.</p></article>
+        <article class="rounded-2xl bg-white shadow p-6 card" style="animation-delay:.05s"><h3 class="font-semibold">Natural‑Language Q&A</h3><p class="mt-2 text-sm text-slate-600">Ask “Can I afford a vacation next month?”, “Why did expenses increase?”, “How to repay loan faster?”.</p></article>
+        <article class="rounded-2xl bg-white shadow p-6 card" style="animation-delay:.1s"><h3 class="font-semibold">Actionable Insights</h3><p class="mt-2 text-sm text-slate-600">Savings rate, expense trend, debt payoff tip, and portfolio mix computed from permitted data only.</p></article>
+        <article class="rounded-2xl bg-white shadow p-6 card" style="animation-delay:.15s"><h3 class="font-semibold">User Permissions</h3><p class="mt-2 text-sm text-slate-600">Grant/revoke per category; the system excludes denied data from KPIs, insights, and answers.</p></article>
+        <article class="rounded-2xl bg-white shadow p-6 card" style="animation-delay:.2s"><h3 class="font-semibold">Responsive & Fast</h3><p class="mt-2 text-sm text-slate-600">Mobile‑first, no build step. Open this file and go.</p></article>
+        <article class="rounded-2xl bg-white shadow p-6 card" style="animation-delay:.25s"><h3 class="font-semibold">Privacy by Design</h3><p class="mt-2 text-sm text-slate-600">All demo computation is client‑side. Production: encrypted MCP, RBAC, audit logs, export/delete.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Permissions ===== -->
+  <section id="permissions" class="py-12 border-t border-slate-200 bg-gradient-to-b from-slate-50 to-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-2xl sm:text-3xl font-bold">Data Permissions</h2>
+        <button id="resetPerms" class="text-sm rounded-lg px-3 py-1.5 border border-slate-300 hover:bg-slate-100">Reset</button>
+      </div>
+      <p class="mt-2 text-slate-600 text-sm">Toggle categories to grant or revoke access. Insights and answers compute only from granted data.</p>
+      <div id="permGrid" class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+  </section>
+
+  <!-- ===== Insights ===== -->
+  <section id="insights" class="py-12 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl sm:text-3xl font-bold">Insights</h2>
+        <button id="recomputeBtn" class="text-sm rounded-lg px-3 py-1.5 border border-slate-300 hover:bg-slate-100">Recompute</button>
+      </div>
+      <div id="insightWrap" class="mt-6 grid md:grid-cols-2 gap-6"></div>
+    </div>
+  </section>
+<script>
+// === AI context (respects your Permissions toggles) ===
+function buildAIContext() {
+  const p = getPerms();
+  const d = REMOTE || MOCK;
+  const ctx = {};
+  if (p.assets)        ctx.assets        = d.assets;
+  if (p.liabilities)   ctx.liabilities   = d.liabilities;
+  if (p.transactions)  ctx.transactions  = d.transactions;
+  if (p.epf)           ctx.epf           = d.epf;
+  if (p.creditScore)   ctx.creditScore   = d.creditScore;
+  if (p.investments)   ctx.investments   = d.investments;
+  return ctx;
+}
+
+async function askAI(question){
+  const context = buildAIContext();
+  const r = await fetch('http://localhost:5050/api/ask', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ question, context })
+  });
+  const data = await r.json().catch(()=> ({}));
+  if (!r.ok || !data.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data.text;
+}
+
+// Convenience helpers
+function lastAssistantBubble(){ 
+  const log = chatLogEl();
+  return log?.lastElementChild?.querySelector('div'); 
+}
+function setThinking(btn, on){
+  if (!btn) return;
+  btn.disabled = on;
+  btn.textContent = on ? 'Sending…' : 'Send';
+}
+
+// Unified send flow: try AI → fallback to rules
+
+async function sendMessage(q){
+  pushMsg('user', q);
+  pushMsg('assistant', '…thinking');
+
+  try {
+    const ai = await askAI(q);
+    lastAssistantBubble().textContent = ai || 'Sorry, I could not generate a reply.';
+  } catch (e) {
+    const ans = answerQuestion(q); // fallback
+    lastAssistantBubble().textContent = ans + ' (fallback)';
+    // SHOW the real error
+    pushMsg('assistant', `⚠️ AI error: ${e.message || 'unavailable'}`);
+    console.warn('AI error → fallback:', e?.message || e);
+  }
+}
+
+
+
+// Wire up UI
+const sendBtn = document.getElementById('sendBtn');
+const chatInput = document.getElementById('chatInput');
+
+sendBtn?.addEventListener('click', async ()=>{
+  const q = chatInput.value.trim(); 
+  if (!q) return;
+  setThinking(sendBtn, true);
+  chatInput.value = '';
+  await sendMessage(q);
+  setThinking(sendBtn, false);
+});
+
+chatInput?.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') sendBtn?.click();
+});
+
+// Suggestion chips use the same flow
+document.querySelectorAll('.sugg').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    setThinking(sendBtn, true);
+    await sendMessage(btn.textContent.trim());
+    setThinking(sendBtn, false);
+  });
+});
+</script>
+
+  <!-- ===== Chat ===== -->
+ 
+
+  <!-- ===== Privacy & Architecture ===== -->
+  <section id="privacy" class="py-12 border-t border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl sm:text-3xl font-bold">Privacy & Architecture (Demo)</h2>
+      <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm text-slate-700">
+        <ul class="space-y-2 bg-white rounded-2xl p-6 shadow border border-slate-200">
+          <li class="font-semibold">This file-only demo:</li>
+          <li>• All data stays in your browser memory.</li>
+          <li>• Toggle permissions at any time; they persist with <code>localStorage</code>.</li>
+          <li>• Replace the in-memory JSON with a fetch to your mock MCP server.</li>
+        </ul>
+        <ul class="space-y-2 bg-white rounded-2xl p-6 shadow border border-slate-200">
+          <li class="font-semibold">Production (suggested):</li>
+          <li>• Encrypted MCP over TLS; per‑category access tokens and audit logs.</li>
+          <li>• LLM hosted in a VPC with PII redaction, retrieval‑augmented answers.</li>
+          <li>• Fine‑grained role‑based access + user‑controlled data export/delete.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-10 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-sm text-slate-600 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+      <p>© <span id="year"></span> SpeakToMoney — Prototype</p>
+      <p>Built for a 36‑hour hackathon. LLM‑ready.</p>
+    </div>
+  </footer>
+
+  <!-- ===== Script: Mock Data + Logic ===== -->
+  <script>
+
+// ==========================
+// Option A: Local JSON + Fallback
+// ==========================
+const MOCK = {
+  assets: { cash: 60000, bank:[{name:'HDFC', balance:240000},{name:'SBI', balance:90000}], property:[{name:'Apartment', value:4500000}], others:120000 },
+  liabilities: { loans:[{name:'Home Loan', outstanding:2200000, rate:8.2},{name:'Car Loan', outstanding:320000, rate:9.5}], cards:[{name:'VISA', outstanding:18000, apr:36}] },
+  transactions: [
+    {month:'Apr', income:180000, expenses:110000},
+    {month:'May', income:180000, expenses:115000},
+    {month:'Jun', income:185000, expenses:118000},
+    {month:'Jul', income:185000, expenses:121000},
+    {month:'Aug', income:190000, expenses:130000},
+    {month:'Sep', income:195000, expenses:142000}
+  ],
+  epf: { employee:350000, employer:350000, current:800000 },
+  creditScore: { score:752, rating:'Good' },
+  investments: { stocks:[{scrip:'INFY', value:220000},{scrip:'TCS', value:260000}], mutualFunds:[{name:'Nifty 50 Index', value:340000}], bonds:[{name:'GOI 2030', value:100000}] }
+};
+
+let REMOTE = null; // if set, we use this instead of MOCK
+
+async function fetchMockData() {
+  const base = "mock"; // folder next to index.html
+  const urls = ['assets','liabilities','transactions','epf','creditScore','investments'].map(n=>`${base}/${n}.json`);
+  const [assets, liabilities, transactions, epf, creditScore, investments] = await Promise.all(
+    urls.map(u => fetch(u).then(r => {
+      if (!r.ok) throw new Error(`${u} -> ${r.status}`);
+      return r.json();
+    }))
+  );
+  return { assets, liabilities, transactions, epf, creditScore, investments };
+}
+
+async function loadDataFromFiles(){
+  try {
+    REMOTE = await fetchMockData();
+    pushMsg('assistant','Loaded data from /mock JSON files.');
+  } catch (e){
+    console.warn('JSON load error -> using inline data', e);
+    REMOTE = null; // fallback
+    pushMsg('assistant','Could not read /mock JSON (using inline demo data).');
+  }
+  computeAll();
+}
+
+// ==========================
+// Permissions
+// ==========================
+const CATEGORIES = ['assets','liabilities','transactions','epf','creditScore','investments'];
+const DEFAULT_PERMS = Object.fromEntries(CATEGORIES.map(k=>[k,true]));
+const getPerms = ()=> JSON.parse(localStorage.getItem('perms')||'null') || {...DEFAULT_PERMS};
+const setPerms = (p)=>{ localStorage.setItem('perms', JSON.stringify(p)); renderPerms(); computeAll(); };
+
+function renderPerms(){
+  const p = getPerms();
+  const grid = document.getElementById('permGrid');
+  if (!grid) return;
+  grid.innerHTML='';
+  CATEGORIES.forEach(k=>{
+    const on = !!p[k];
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-white p-5 flex items-center justify-between';
+    card.innerHTML = `
+      <div>
+        <div class="font-semibold capitalize">${label(k)}</div>
+        <div class="text-xs text-slate-500">${on? 'Granted' : 'Revoked'} — ${hint(k)}</div>
+      </div>
+      <button class="toggle rounded-full w-14 h-8 relative ${on? 'bg-indigo-600' : 'bg-slate-300'} transition-colors">
+        <span class="sr-only">Toggle ${k}</span>
+        <span class="dot absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-all ${on? 'translate-x-6' : ''}"></span>
+      </button>`;
+    card.querySelector('.toggle').addEventListener('click',()=>{ p[k]=!p[k]; setPerms(p); });
+    grid.appendChild(card);
+  });
+}
+const label = k=>({ assets:'Assets', liabilities:'Liabilities', transactions:'Transactions', epf:'EPF / Retirement', creditScore:'Credit Score', investments:'Investments' })[k]||k;
+const hint  = k=>({ assets:'cash, bank, property', liabilities:'loans, cards', transactions:'income & expenses', epf:'balance & contributions', creditScore:'mock score + rating', investments:'stocks, MF, bonds' })[k]||'';
+
+// ==========================
+// Compute KPIs + Insights + Dashboard
+// ==========================
+function computeAll(){
+  const p = getPerms();
+  const d = REMOTE || MOCK;
+
+  const A = p.assets? d.assets : null;
+  const L = p.liabilities? d.liabilities : null;
+  const T = p.transactions? d.transactions : null;
+  const E = p.epf? d.epf : null;
+  const S = p.creditScore? d.creditScore : null;
+  const I = p.investments? d.investments : null;
+
+  // Totals
+  const assetTotal = A? (A.cash + A.bank.reduce((x,b)=>x+b.balance,0) + A.property.reduce((x,b)=>x+b.value,0) + A.others) : null;
+  const debtTotal  = L? (L.loans.reduce((x,b)=>x+b.outstanding,0) + L.cards.reduce((x,b)=>x+b.outstanding,0)) : null;
+  const netWorth   = (assetTotal!=null && debtTotal!=null) ? (assetTotal - debtTotal) : null;
+  const accounts   = [A?.bank?.length||0, (I?.stocks?.length||0)+(I?.mutualFunds?.length||0)+(I?.bonds?.length||0)].reduce((x,y)=>x+y,0);
+
+  const last = T? T[T.length-1] : null;
+  const prev = T && T.length>1 ? T[T.length-2] : null;
+  const savingsRate = (T? ((last.income-last.expenses)/last.income*100) : null);
+
+  // Hero KPIs (if present)
+  setText('#kpi-accounts', accounts || '—');
+  setText('#kpi-networth', netWorth!=null ? inr(netWorth) : '—');
+  setText('#kpi-savings',  savingsRate!=null ? `${savingsRate.toFixed(1)}%` : '—');
+  setText('#kpi-score',    S ? `${S.score} (${S.rating})` : '—');
+
+  // Mini cards
+  setText('#mini-assets',   assetTotal!=null ? inr(assetTotal) : '—');
+  setText('#mini-expenses', last? inr(last.expenses) : '—');
+  setText('#mini-epf',      E? inr(E.current) : '—');
+  const invTotal = I? ((I.stocks?.reduce((x,b)=>x+b.value,0)||0) + (I.mutualFunds?.reduce((x,b)=>x+b.value,0)||0) + (I.bonds?.reduce((x,b)=>x+b.value,0)||0)) : null;
+  setText('#mini-inv',      invTotal!=null ? inr(invTotal) : '—');
+  setText('#mini-debt',     debtTotal!=null ? inr(debtTotal) : '—');
+
+  // Sparklines
+  if (document.querySelector('#spark-assets')) spark('#spark-assets', T? T.map((row,idx)=>[idx*35+10, 60 - scale(row.income-row.expenses, T, 'net')]) : []);
+  if (document.querySelector('#spark-expenses')) spark('#spark-expenses', T? T.map((row,idx)=>[idx*35+10, 60 - scale(row.expenses, T, 'expenses')]) : []);
+
+  // Insights section (if present)
+  const insights = [];
+  if (T){
+    const expUp = prev ? ((last.expenses - prev.expenses)/prev.expenses*100) : 0;
+    insights.push({ title:'Expense Trend', body:`Last month you spent ${inr(last.expenses)}. ${expUp>=0? 'Up':'Down'} ${Math.abs(expUp).toFixed(1)}% vs previous.` });
+  } else insights.push({ title:'Expense Trend', body:'Transactions access is revoked; cannot compute expense trend.' });
+
+  if (savingsRate!=null) insights.push({ title:'Savings Rate', body:`Your latest savings rate is ${savingsRate.toFixed(1)}%. ${savingsRate>=20? 'Great buffer.':'Target 20–30% for faster progress.'}` });
+  else insights.push({ title:'Savings Rate', body:'Grant Transactions to estimate savings rate.' });
+
+  if (L){
+    const highAPR = L.cards.filter(c=>c.apr>=30);
+    if (highAPR.length) insights.push({ title:'Debt Paydown Tip', body:`Prioritize high-APR card (${highAPR[0].name} at ${highAPR[0].apr}% APR). Snowball extra ₹ here first.` });
+  } else insights.push({ title:'Debt Paydown Tip', body:'Grant Liabilities to compute paydown strategy.' });
+
+  if (I){
+    const total = invTotal||0; const stocks = (I.stocks||[]).reduce((x,b)=>x+b.value,0);
+    insights.push({ title:'Allocation Check', body:`Equity exposure ~${ total? Math.round(stocks/total*100) : 0 }%. Keep diversified; ensure debt (bonds/EPF) aligns with risk.` });
+  } else insights.push({ title:'Allocation Check', body:'Grant Investments to analyze portfolio mix.' });
+
+  if (netWorth!=null) insights.push({ title:'Net Worth', body:`Estimated net worth is ${inr(netWorth)}.` });
+  else insights.push({ title:'Net Worth', body:'Grant both Assets and Liabilities to estimate net worth.' });
+
+  const wrap = document.getElementById('insightWrap');
+  if (wrap){
+    wrap.innerHTML='';
+    insights.forEach((ins,ix)=>{
+      const card = document.createElement('article');
+      card.className = 'rounded-2xl bg-white shadow p-6 border border-slate-200';
+      card.style.animationDelay = `${ix*0.04}s`;
+      card.innerHTML = `<h3 class="font-semibold">${ins.title}</h3><p class="mt-2 text-sm text-slate-600">${ins.body}</p>`;
+      wrap.appendChild(card);
+    });
+  }
+
+  // Dashboard cards
+  renderDashboard({assetTotal, debtTotal, netWorth, savingsRate, T});
+}
+
+function renderDashboard({assetTotal, debtTotal, netWorth, savingsRate, T}){
+  const d = new Date();
+  const fmt = d.toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+  setText('#dash-date', fmt);
+
+  if (document.querySelector('#dash-total-balance')){
+    setText('#dash-total-balance', assetTotal!=null ? inr(assetTotal) : '—');
+    setText('#dash-card-limit', debtTotal!=null ? `Debt: ${inr(debtTotal)}` : '—');
+  }
+
+  if (document.querySelector('#dash-goal-total')){
+    const target = 200000;
+    const achieved = Math.max(0, Math.round((savingsRate||0)/100 * target));
+    setText('#dash-goal-total', inr(target));
+    const pct = Math.max(0, Math.min(1, achieved/target));
+    const len = 251 * pct, rest = 251 - len;
+    const g = document.getElementById('dash-gauge'); if (g) g.setAttribute('stroke-dasharray', `${len} ${rest}`);
+  }
+
+  if (document.querySelector('#dash-upcoming')){
+    const items = [
+      { date:'May 15', name:'Figma — Monthly', amt:150 },
+      { date:'Jun 16', name:'Adobe — Yearly', amt:559 }
+    ];
+    document.querySelector('#dash-upcoming').innerHTML = items.map(it=>`
+      <div class="flex items-center justify-between rounded-lg border border-slate-200 p-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-slate-100 grid place-items-center text-xs font-semibold">${it.date.split(' ')[0]}</div>
+          <div>
+            <div class="font-medium text-sm">${it.name}</div>
+            <div class="text-xs text-slate-500">${it.date}</div>
+          </div>
+        </div>
+        <div class="font-semibold">₹${it.amt}</div>
+      </div>`).join('');
+  }
+
+  if (document.querySelector('#dash-recent')){
+    const rows = (T||[]).slice(-4).reverse();
+    document.querySelector('#dash-recent').innerHTML = rows.map(r=>{
+      return `<div class="flex items-center justify-between py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100"></div>
+          <div><div class="font-medium text-sm">${r.month} Summary</div><div class="text-xs text-slate-500">Expenses</div></div>
+        </div>
+        <div class="text-sm font-semibold">${inr(r.expenses)}</div>
+      </div>`;
+    }).join('');
+  }
+
+if (document.querySelector('#dash-bars')) {
+  const svg = document.querySelector('#dash-bars');
+  svg.innerHTML = '';
+
+  // Use your Transactions to derive two 7-day series
+  const last = (T||[]).slice(-1)[0] || null;
+  const prev = (T||[]).slice(-2, -1)[0] || last;
+
+  const thisWeek = last ? splitMonthlyToWeek(last.expenses) : [0,0,0,0,0,0,0];
+  const lastWeek = prev ? splitMonthlyToWeek(prev.expenses) : [0,0,0,0,0,0,0];
+
+  // Frame & scales
+  const w = 420, h = 180, pad = 30, bw = 18, gap = 20;
+  const vmax = Math.max(...thisWeek, ...lastWeek, 1);
+  const yScale = v => (v / vmax) * (h - 2*pad);
+
+  // Axes (subtle)
+  svg.innerHTML += `<line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#E5E7EB"/>`;
+  svg.innerHTML += `<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h-pad}" stroke="#E5E7EB"/>`;
+
+  // Bars + labels
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  for (let i=0;i<7;i++) {
+    const x = pad + i*(bw*2 + gap);
+
+    const ha = yScale(thisWeek[i]);
+    const hb = yScale(lastWeek[i]);
+    const ya = h - pad - ha;
+    const yb = h - pad - hb;
+
+    // This week (emerald)
+    svg.innerHTML += `
+      <rect x="${x}" y="${ya}" width="${bw}" height="${ha}" rx="6" fill="#10b981">
+        <title>This week ${days[i]}: ₹${thisWeek[i].toLocaleString('en-IN')}</title>
+      </rect>`;
+
+    // Last week (slate)
+    svg.innerHTML += `
+      <rect x="${x + bw + 4}" y="${yb}" width="${bw}" height="${hb}" rx="6" fill="#CBD5E1">
+        <title>Last week ${days[i]}: ₹${lastWeek[i].toLocaleString('en-IN')}</title>
+      </rect>`;
+
+    // Day label
+    svg.innerHTML += `<text x="${x + bw - 6}" y="${h - pad + 14}" font-size="10" fill="#64748B">${days[i]}</text>`;
+  }
+}
+
+  if (document.querySelector('#bd-housing')){
+    const last = (T||[]).slice(-1)[0];
+    const base = last? last.expenses : 0;
+    const parts = { housing: base*0.25, food: base*0.2, transport: base*0.15, shopping: base*0.2 };
+    setText('#bd-housing', inr(parts.housing||0));
+    setText('#bd-food', inr(parts.food||0));
+    setText('#bd-transport', inr(parts.transport||0));
+    setText('#bd-shopping', inr(parts.shopping||0));
+  }
+}
+
+// ==========================
+// Helpers
+// ==========================
+const setText = (sel, val)=>{ const el = document.querySelector(sel); if (el) el.textContent = val; };
+const inr = n=>{ try { return new Intl.NumberFormat('en-IN',{ style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);} catch{ return `₹${Math.round(n).toLocaleString('en-IN')}`;} };
+function scale(val, T, key){ const arr = key==='net'? T.map(r=>r.income-r.expenses) : T.map(r=>r.expenses); const mn = Math.min(...arr), mx = Math.max(...arr); if (mx===mn) return 30; return (val-mn)/(mx-mn)*50 + 5; }
+function spark(sel, points){ const poly = document.querySelector(sel); poly?.setAttribute('points', points.map(p=>p.join(',')).join(' ')); }
+
+// ==========================
+// Chat (rule-based demo)
+// ==========================
+const chatLogEl = ()=> document.getElementById('chatLog');
+function pushMsg(role, text){
+  const row = document.createElement('div');
+  row.className = role==='user'? 'text-right' : 'text-left';
+  row.innerHTML = `<div class="inline-block max-w-[85%] rounded-2xl px-4 py-2 text-sm ${role==='user'?'bg-indigo-600 text-white':'bg-slate-100'}">${text}</div>`;
+  chatLogEl()?.appendChild(row); chatLogEl()&&(chatLogEl().scrollTop = chatLogEl().scrollHeight);
+}
+function answerQuestion(q){
+  const p = getPerms(); const d = REMOTE || MOCK; let reply='';
+  const T = p.transactions? d.transactions : null;
+  const L = p.liabilities? d.liabilities : null;
+  const A = p.assets? d.assets : null;
+
+  if (/vacation|trip|travel/i.test(q)){
+    if (!T) reply = 'I need Transactions access to estimate affordability.';
+    else {
+      const last = T[T.length-1];
+      const buffer = (last.income-last.expenses);
+      reply = buffer>40000
+        ? `Yes, a modest vacation looks feasible. You had ~${inr(buffer)} left last month. Keep ₹10–15k as safety.`
+        : `It looks tight. Last month leftover was ~${inr(Math.max(buffer,0))}. Trim expenses first.`;
+    }
+  } else if (/why.*expense|increase|spend/i.test(q)){
+    if (!T) reply = 'Grant Transactions to analyze expense change.';
+    else {
+      const last = T[T.length-1], prev = T[T.length-2]||T[0];
+      const diff = last.expenses - prev.expenses; const pct = prev.expenses ? (diff/prev.expenses*100).toFixed(1) : '—';
+      reply = `Expenses changed by ${diff>=0?'+':''}${inr(diff)} (${pct}%). Biggest jump likely in variable categories (demo data).`;
+    }
+  } else if (/repay|loan|debt|faster/i.test(q)){
+    if (!L) reply = 'Grant Liabilities to suggest a payoff plan.';
+    else {
+      const card = L.cards.sort((a,b)=>b.apr-a.apr)[0];
+      reply = `Pay highest-APR first: ${card.name} at ${card.apr}% APR. Automate extra ₹ to this card; keep home loan on schedule unless prepayment penalty is low.`;
+    }
+  } else if (/net worth|networth/i.test(q)){
+    if (!A || !L) reply = 'Grant both Assets and Liabilities to compute net worth.';
+    else {
+      const assetTotal = A.cash + A.bank.reduce((x,b)=>x+b.balance,0) + A.property.reduce((x,b)=>x+b.value,0) + A.others;
+      const debtTotal  = L.loans.reduce((x,b)=>x+b.outstanding,0) + L.cards.reduce((x,b)=>x+b.outstanding,0);
+      reply = `Estimated net worth: ${inr(assetTotal - debtTotal)}.`;
+    }
+  } else if (/save.*6|next 6/i.test(q)){
+    if (!T) reply = 'Grant Transactions to project savings.';
+    else {
+      const avg = T.reduce((x,r)=>x+(r.income-r.expenses),0)/T.length;
+      reply = `At the recent pace, ~${inr(avg*6)} in 6 months (assuming similar income/expenses).`;
+    }
+  } else {
+    reply = 'Try: “Can I afford a vacation next month?”, “Why did my expenses increase last quarter?”, or “What’s my best option for repaying my loan faster?”';
+  }
+  return reply;
+}
+
+// ==========================
+// Header interactions & buttons
+// ==========================
+const headerEl = document.querySelector('header.sticky');
+const navPanel = document.getElementById('navPanel');
+const menuBtn  = document.getElementById('menuBtn');
+menuBtn?.addEventListener('click', ()=> navPanel?.classList.toggle('open'));
+navPanel?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navPanel?.classList.remove('open')));
+document.getElementById('loadDemoBtn')?.addEventListener('click', async ()=>{ await loadDataFromFiles(); });
+document.getElementById('loadDemoBtnMobile')?.addEventListener('click', async ()=>{ await loadDataFromFiles(); navPanel?.classList.remove('open'); });
+window.addEventListener('scroll',()=>{ if (window.scrollY>4) headerEl?.classList.add('scrolled'); else headerEl?.classList.remove('scrolled'); });
+
+// ==========================
+// Chat events & Init
+// ==========================
+
+</script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const sendBtn   = document.getElementById('sendBtn');
+  const chatInput = document.getElementById('chatInput');
+  const chatLog   = document.getElementById('chatLog');
+
+  function lastAssistantBubble(){
+    return chatLog?.lastElementChild?.querySelector('div');
+  }
+  function setThinking(on){
+    if (!sendBtn) return;
+    sendBtn.disabled = on;
+    sendBtn.textContent = on ? 'Sending…' : 'Send';
+  }
+
+  async function sendMessage(q){
+    pushMsg('user', q);
+    pushMsg('assistant', '…thinking');
+    try {
+      const ai = await askAI(q);                 // uses your askAI() defined earlier
+      lastAssistantBubble().textContent = ai || 'Sorry, I could not generate a reply.';
+    } catch (e) {
+      const ans = answerQuestion(q);             // fallback to rules
+      lastAssistantBubble().textContent = ans + ' (fallback)';
+      console.warn('AI error → fallback:', e?.message || e);
+    }
+  }
+
+  // Click & Enter handlers
+  sendBtn?.addEventListener('click', async ()=>{
+    const q = chatInput.value.trim(); if (!q) return;
+    chatInput.value = '';
+    setThinking(true);
+    await sendMessage(q);
+    setThinking(false);
+  });
+  chatInput?.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') sendBtn?.click();
+  });
+
+  // Suggestion chips
+  document.querySelectorAll('.sugg').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      setThinking(true);
+      await sendMessage(btn.textContent.trim());
+      setThinking(false);
+    });
+  });
+
+  // Normal page init (safe to run now)
+  document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+  renderPerms();
+  computeAll();
+  pushMsg('assistant','Welcome! Click “Load Demo Data” to pull from /mock (or it will use the inline demo).');
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transactions — FineBank.io</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <!-- ===== Shell ===== -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Sidebar (static) -->
+      <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 grid place-items-center">₹</div>
+          <div class="font-semibold">FineBank.io</div>
+        </div>
+        <nav class="space-y-1 text-sm">
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="index.html">Overview</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="transaction.html">Transactions</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="balances.html">Balances</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="bills.html">Bills</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="expenses.html">Expenses</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="goals.html">Goals</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="settings.html">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+        <!-- Header / Filters -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold">Transactions</h1>
+            <p class="text-xs text-slate-500">Inline demo data, no fetching.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+              <input id="q" class="w-48 rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm" placeholder="Search merchant/category">
+            </div>
+
+            <select id="month" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All months</option>
+            </select>
+
+            <select id="cat" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All categories</option>
+            </select>
+
+            <select id="type" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="all">All types</option>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+              <option value="transfer">Transfer</option>
+            </select>
+
+            <button id="clear" class="rounded-xl border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Clear</button>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="grid lg:grid-cols-3 gap-4 mt-6">
+          <!-- Left: list -->
+          <section class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 p-4 shadow">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-sm font-semibold">Results</h2>
+              <div class="text-xs text-slate-500"><span id="count">0</span> items</div>
+            </div>
+            <div id="list" class="divide-y divide-slate-100"></div>
+          </section>
+
+          <!-- Right: calculations -->
+          <aside class="lg:col-span-1">
+            <div class="sticky top-6 space-y-4">
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Totals (current view)</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Income</span><span id="totIncome" class="font-semibold text-emerald-600">—</span></li>
+                  <li class="flex justify-between"><span>Expenses</span><span id="totExpense" class="font-semibold text-rose-600">—</span></li>
+                  <li class="flex justify-between"><span>Net cash flow</span><span id="net" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Avg daily spend</span><span id="avgDay">—</span></li>
+                  <li class="flex justify-between"><span>Median transaction</span><span id="median">—</span></li>
+                  <li class="flex justify-between"><span>P90 transaction</span><span id="p90">—</span></li>
+                  <li class="flex justify-between"><span>Transactions</span><span id="txCount">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Insights</h3>
+                <ul class="text-sm space-y-1.5">
+                  <li class="flex justify-between"><span>Top category by spend</span><span id="topCat" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Top merchant by spend</span><span id="topMerch" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Essential vs Discretionary</span><span id="essDisc" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Recurring bills (est.)</span><span id="recurring" class="font-semibold">—</span></li>
+                  <li class="flex justify-between"><span>Est. savings rate</span><span id="saveRate" class="font-semibold">—</span></li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+                <h3 class="text-sm font-semibold mb-2">Notes</h3>
+                <p class="text-xs text-slate-600">All numbers recompute when you filter or search. Savings rate = income − expenses ÷ income.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== Data + Logic ===== -->
+  <script>
+  // ---------- Demo data (inline) ----------
+  const TX = [
+    // September 2025
+    { date:'2025-09-01', merchant:'Salary • FINEbank', category:'Income', type:'income', amount:180000 },
+    { date:'2025-09-02', merchant:'Big Bazaar', category:'Groceries', type:'expense', amount:1840 },
+    { date:'2025-09-03', merchant:'Uber', category:'Transport', type:'expense', amount:240 },
+    { date:'2025-09-04', merchant:'Zomato', category:'Food', type:'expense', amount:520 },
+    { date:'2025-09-05', merchant:'Airtel Fiber', category:'Utilities', type:'expense', amount:999, recurring:true },
+    { date:'2025-09-06', merchant:'Amazon', category:'Shopping', type:'expense', amount:2199 },
+    { date:'2025-09-09', merchant:'HDFC Credit Card', category:'Transfer', type:'transfer', amount:15000 },
+    { date:'2025-09-10', merchant:'Swiggy', category:'Food', type:'expense', amount:430 },
+    { date:'2025-09-14', merchant:'Indian Oil', category:'Transport', type:'expense', amount:3200 },
+    { date:'2025-09-17', merchant:'Apollo Pharmacy', category:'Health', type:'expense', amount:740 },
+    { date:'2025-09-22', merchant:'Rent', category:'Housing', type:'expense', amount:28000, recurring:true },
+    { date:'2025-09-23', merchant:'Starbucks', category:'Food', type:'expense', amount:310 },
+    { date:'2025-09-25', merchant:'IRCTC Refund', category:'Income', type:'income', amount:850 },
+    { date:'2025-09-27', merchant:'Myntra', category:'Shopping', type:'expense', amount:2899 },
+    // August 2025
+    { date:'2025-08-01', merchant:'Salary • FINEbank', category:'Income', type:'income', amount:180000 },
+    { date:'2025-08-03', merchant:'D-Mart', category:'Groceries', type:'expense', amount:2210 },
+    { date:'2025-08-05', merchant:'Airtel Fiber', category:'Utilities', type:'expense', amount:999, recurring:true },
+    { date:'2025-08-08', merchant:'Uber', category:'Transport', type:'expense', amount:510 },
+    { date:'2025-08-13', merchant:'Nykaa', category:'Shopping', type:'expense', amount:1699 },
+    { date:'2025-08-22', merchant:'Rent', category:'Housing', type:'expense', amount:28000, recurring:true },
+    { date:'2025-08-29', merchant:'Cafe Coffee Day', category:'Food', type:'expense', amount:270 }
+  ];
+
+  // Categories to treat as "essential"
+  const ESSENTIAL = new Set(['Groceries','Utilities','Transport','Health','Housing','Insurance']);
+
+  // ---------- Helpers ----------
+  const INR = n => new Intl.NumberFormat('en-IN',{ style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);
+  const byMonthStr = d => d.slice(0,7); // "YYYY-MM"
+  const uniq = arr => [...new Set(arr)];
+  const sum = arr => arr.reduce((a,b)=>a+b,0);
+  const median = arr => {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a,b)=>a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+  };
+  const pctl = (arr, p) => {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a,b)=>a-b);
+    const idx = Math.min(s.length-1, Math.max(0, Math.ceil((p/100)*s.length)-1));
+    return s[idx];
+  };
+
+  // ---------- Populate filters ----------
+  const monthSel = document.getElementById('month');
+  const catSel = document.getElementById('cat');
+  const typeSel = document.getElementById('type');
+  const qInput = document.getElementById('q');
+
+  // months
+  const months = uniq(TX.map(t => byMonthStr(t.date))).sort().reverse();
+  months.forEach(m => monthSel.append(new Option(m, m)));
+  // categories
+  const cats = uniq(TX.filter(t=>t.type==='expense').map(t => t.category)).sort();
+  cats.forEach(c => catSel.append(new Option(c, c)));
+
+  // default to latest month
+  if (months.length) monthSel.value = months[0];
+
+  document.getElementById('clear').addEventListener('click', () => {
+    qInput.value = ''; catSel.value='all'; typeSel.value='all'; monthSel.value = months[0] || 'all';
+    render();
+  });
+  [qInput, monthSel, catSel, typeSel].forEach(el => el.addEventListener('input', render));
+
+  // ---------- Rendering ----------
+  function filteredTx() {
+    const q = qInput.value.trim().toLowerCase();
+    const m = monthSel.value;
+    const c = catSel.value;
+    const t = typeSel.value;
+
+    return TX.filter(tx => {
+      if (m !== 'all' && byMonthStr(tx.date) !== m) return false;
+      if (c !== 'all' && tx.category !== c) return false;
+      if (t !== 'all' && tx.type !== t) return false;
+      if (q && !(tx.merchant.toLowerCase().includes(q) || tx.category.toLowerCase().includes(q))) return false;
+      return true;
+    }).sort((a,b)=> a.date < b.date ? 1 : -1);
+  }
+
+  function renderList(items) {
+    const wrap = document.getElementById('list');
+    document.getElementById('count').textContent = items.length;
+    if (!items.length) { wrap.innerHTML = `<div class="py-10 text-center text-sm text-slate-500">No transactions found.</div>`; return; }
+
+    wrap.innerHTML = items.map(tx => `
+      <div class="py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg ${tx.type==='income'?'bg-emerald-100':'bg-slate-100'} grid place-items-center text-xs font-semibold">
+            ${tx.category[0]}
+          </div>
+          <div>
+            <div class="font-medium text-sm">${tx.merchant}</div>
+            <div class="text-[11px] text-slate-500">${tx.category} • ${new Date(tx.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div>
+          </div>
+        </div>
+        <div class="text-sm font-semibold ${tx.type==='income'?'text-emerald-600': tx.type==='transfer'?'text-slate-500':'text-slate-800'}">
+          ${tx.type==='income' ? '+' : tx.type==='transfer' ? '±' : '-'}${INR(tx.amount).replace('₹','')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderCalcs(items) {
+    const income = sum(items.filter(t=>t.type==='income').map(t=>t.amount));
+    const expense = sum(items.filter(t=>t.type==='expense').map(t=>t.amount));
+    const net = income - expense;
+
+    // per-day average for the current selection window (if a single month, use that month’s days)
+    let days = 30;
+    const selMonth = monthSel.value;
+    if (selMonth !== 'all') {
+      const [y, m] = selMonth.split('-').map(Number);
+      days = new Date(y, m, 0).getDate();
+    } else {
+      // span days from min..max dates in selection
+      if (items.length) {
+        const dmin = new Date(items[items.length-1].date);
+        const dmax = new Date(items[0].date);
+        days = Math.max(1, Math.round((dmax - dmin) / (1000*60*60*24)) + 1);
+      }
+    }
+    const avgDaily = expense / days;
+
+    // stats on absolute transaction amounts (exclude transfers)
+    const amounts = items.filter(t=>t.type!=='transfer').map(t=>t.amount);
+    const med = median(amounts);
+    const p90v = pctl(amounts, 90);
+
+    // top category & merchant by spend (expenses only)
+    const spend = items.filter(t=>t.type==='expense');
+    const byCat = Object.entries(spend.reduce((m,t)=> (m[t.category]=(m[t.category]||0)+t.amount, m), {}))
+                        .sort((a,b)=>b[1]-a[1]);
+    const byMer = Object.entries(spend.reduce((m,t)=> (m[t.merchant]=(m[t.merchant]||0)+t.amount, m), {}))
+                        .sort((a,b)=>b[1]-a[1]);
+
+    // essentials vs discretionary
+    const essentialSpend = sum(spend.filter(t=>ESSENTIAL.has(t.category)).map(t=>t.amount));
+    const discSpend = Math.max(0, expense - essentialSpend);
+    const essDiscTxt = expense ? `${Math.round(essentialSpend/expense*100)}% / ${Math.round(discSpend/expense*100)}%` : '—';
+
+    // recurring guess
+    const recurringAmt = sum(items.filter(t=>t.recurring && t.type==='expense').map(t=>t.amount));
+
+    // savings rate
+    const saveRate = income ? Math.round((net/income)*100) : null;
+
+    // set
+    setText('totIncome', income ? INR(income) : '—');
+    setText('totExpense', expense ? INR(expense) : '—');
+    const netEl = document.getElementById('net');
+    netEl.textContent = net ? INR(net) : '—';
+    netEl.className = 'font-semibold ' + (net>0?'text-emerald-600': net<0?'text-rose-600':'');
+    setText('avgDay', expense? INR(avgDaily):'—');
+    setText('median', amounts.length? INR(med):'—');
+    setText('p90', amounts.length? INR(p90v):'—');
+    setText('txCount', items.length.toString());
+    setText('topCat', byCat[0]? `${byCat[0][0]} (${INR(byCat[0][1])})` : '—');
+    setText('topMerch', byMer[0]? `${byMer[0][0]} (${INR(byMer[0][1])})` : '—');
+    setText('essDisc', essDiscTxt);
+    setText('recurring', recurringAmt? INR(recurringAmt):'—');
+    setText('saveRate', saveRate==null? '—' : `${saveRate}%`);
+  }
+
+  function setText(id, val){ const el = document.getElementById(id); if (el) el.textContent = val; }
+
+  function render(){
+    const items = filteredTx();
+    renderList(items);
+    renderCalcs(items);
+  }
+
+  // initial
+  render();
+  </script>
+</body>
+</html>

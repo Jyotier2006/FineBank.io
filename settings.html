@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings — FineBank.io</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Sidebar -->
+      <aside class="col-span-12 md:col-span-3 lg:col-span-2 bg-slate-900 text-slate-100 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 grid place-items-center">₹</div>
+          <div class="font-semibold">FineBank.io</div>
+        </div>
+        <nav class="space-y-1 text-sm">
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="index.html">Overview</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="balances.html">Balances</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="transaction.html">Transactions</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="bills.html">Bills</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="expenses.html">Expenses</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" href="goals.html">Goals</a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/20 text-emerald-300" href="settings.html">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow flex items-center justify-between">
+          <div>
+            <h1 class="text-xl font-semibold">Settings</h1>
+            <p class="text-xs text-slate-500">Everything saves to <code>localStorage</code> instantly.</p>
+          </div>
+          <div id="toast" class="hidden text-xs rounded-lg px-3 py-1 bg-emerald-100 text-emerald-700">Saved</div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 mt-6">
+          <!-- Left -->
+          <section class="lg:col-span-2 space-y-4">
+            <!-- Profile -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <h2 class="text-sm font-semibold">Profile</h2>
+              <div class="mt-3 grid sm:grid-cols-2 gap-3 text-sm">
+                <label class="flex flex-col">
+                  <span class="text-xs text-slate-600">Full name</span>
+                  <input id="profName" class="rounded-xl border border-slate-300 px-3 py-2">
+                </label>
+                <label class="flex flex-col">
+                  <span class="text-xs text-slate-600">Email</span>
+                  <input id="profEmail" type="email" class="rounded-xl border border-slate-300 px-3 py-2">
+                </label>
+              </div>
+            </div>
+
+            <!-- Permissions -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold">Data permissions</h2>
+                <div class="text-xs text-slate-500"><span id="grantCount">0</span> / 6 granted</div>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Controls what your insights/pages can access.</p>
+              <div id="permGrid" class="mt-4 grid sm:grid-cols-2 gap-3"></div>
+              <div class="mt-3 flex gap-2">
+                <button id="permAll"  class="rounded-xl border border-slate-300 px-3 py-2 text-sm">Grant all</button>
+                <button id="permNone" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">Revoke all</button>
+                <button id="permReset" class="ml-auto rounded-xl border border-slate-300 px-3 py-2 text-sm">Reset</button>
+              </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <h2 class="text-sm font-semibold">Notifications</h2>
+              <div class="mt-3 grid sm:grid-cols-2 gap-3 text-sm">
+                <label class="flex items-center gap-2"><input id="notifEmail" type="checkbox" class="w-4 h-4"><span>Email alerts</span></label>
+                <label class="flex items-center gap-2"><input id="notifPush"  type="checkbox" class="w-4 h-4"><span>Push notifications</span></label>
+                <label class="flex items-center gap-2"><input id="notifDigest"type="checkbox" class="w-4 h-4"><span>Monthly digest</span></label>
+                <label class="flex items-center gap-2">
+                  <span class="text-slate-600 w-36">Digest day (1–28)</span>
+                  <input id="digestDay" type="number" min="1" max="28" class="rounded-xl border border-slate-300 px-3 py-2 w-24">
+                </label>
+                <label class="flex items-center gap-2">
+                  <span class="text-slate-600 w-36">Budget alert at</span>
+                  <input id="alertThreshold" type="number" step="0.05" min="0" max="1" class="rounded-xl border border-slate-300 px-3 py-2 w-28">
+                  <span class="text-xs text-slate-500">0.8 = 80%</span>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right -->
+          <aside class="lg:col-span-1 space-y-4">
+            <!-- Preferences -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <h2 class="text-sm font-semibold">App preferences</h2>
+              <div class="mt-3 grid gap-3 text-sm">
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-slate-600">Theme</span>
+                  <select id="prefTheme" class="rounded-xl border border-slate-300 px-3 py-2">
+                    <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
+                  </select>
+                </label>
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-slate-600">Density</span>
+                  <select id="prefDensity" class="rounded-xl border border-slate-300 px-3 py-2">
+                    <option value="comfortable">Comfortable</option><option value="compact">Compact</option>
+                  </select>
+                </label>
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-slate-600">Currency</span>
+                  <select id="prefCurrency" class="rounded-xl border border-slate-300 px-3 py-2">
+                    <option>INR</option><option>USD</option><option>EUR</option><option>GBP</option>
+                  </select>
+                </label>
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-slate-600">Locale</span>
+                  <select id="prefLocale" class="rounded-xl border border-slate-300 px-3 py-2">
+                    <option value="en-IN">English (India)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <!-- API / Backend -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold">API & Backend</h2>
+                <div id="apiStatus" class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">unknown</div>
+              </div>
+              <div class="mt-3 grid gap-3 text-sm">
+                <label class="flex flex-col">
+                  <span class="text-xs text-slate-600">Base URL</span>
+                  <input id="apiBase" class="rounded-xl border border-slate-300 px-3 py-2" placeholder="http://localhost:5050">
+                </label>
+                <label class="flex flex-col">
+                  <span class="text-xs text-slate-600">Model (info)</span>
+                  <input id="apiModel" class="rounded-xl border border-slate-300 px-3 py-2" placeholder="llama3">
+                </label>
+                <div class="flex gap-2">
+                  <button id="apiTest" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">Test /health</button>
+                  <button id="apiSave" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">Save</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data & Privacy -->
+            <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow">
+              <h2 class="text-sm font-semibold">Data & Privacy</h2>
+              <div class="mt-3 space-y-3 text-sm">
+                <button id="exportBtn" class="w-full rounded-xl border border-slate-300 px-3 py-2">Export settings (JSON)</button>
+                <label class="block">
+                  <span class="text-xs text-slate-600">Import settings</span>
+                  <input id="importFile" type="file" accept="application/json" class="block mt-1 text-xs">
+                </label>
+                <button id="resetBtn" class="w-full rounded-xl border border-slate-300 px-3 py-2">Reset to defaults</button>
+                <button id="clearBtn" class="w-full rounded-xl border border-rose-300 text-rose-700 px-3 py-2">Clear all local data</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ===== Defaults =====
+    const DEFAULTS = {
+      profile: { name: "Neel Patel", email: "neel@finebank.io" },
+      permissions: { assets:true, liabilities:true, transactions:true, epf:true, creditScore:true, investments:true },
+      preferences: { theme:"system", currency:"INR", locale:"en-IN", density:"comfortable" },
+      notifications: { email:true, push:false, digest:true, digestDay:1, alertThreshold:0.8 },
+      api: { base:"http://localhost:5050", model:"llama3" }
+    };
+    const PERM_META = [
+      ["assets","Assets","cash, bank, property"],
+      ["liabilities","Liabilities","loans, cards"],
+      ["transactions","Transactions","income & expenses"],
+      ["epf","EPF / Retirement","balance & contributions"],
+      ["creditScore","Credit Score","mock score + rating"],
+      ["investments","Investments","stocks, MF, bonds"],
+    ];
+
+    // ===== Storage helpers =====
+    const getSettings = () => {
+      const s = JSON.parse(localStorage.getItem("app_settings") || "null") || structuredClone(DEFAULTS);
+      const legacy = JSON.parse(localStorage.getItem("perms") || "null");
+      if (legacy) s.permissions = { ...s.permissions, ...legacy };
+      return s;
+    };
+    const saveSettings = (s) => {
+      localStorage.setItem("app_settings", JSON.stringify(s));
+      localStorage.setItem("perms", JSON.stringify(s.permissions)); // keep old key in sync
+      flashSaved();
+    };
+
+    const settings = getSettings();
+
+    // ===== UI helpers =====
+    function flashSaved(){
+      const t = document.getElementById("toast");
+      t.classList.remove("hidden");
+      clearTimeout(flashSaved._t);
+      flashSaved._t = setTimeout(()=>t.classList.add("hidden"), 900);
+    }
+    function updateGrantCount(){
+      const n = Object.values(settings.permissions).filter(Boolean).length;
+      document.getElementById("grantCount").textContent = n;
+    }
+
+    // ===== Renderers =====
+    function renderProfile(){
+      profName.value  = settings.profile.name || "";
+      profEmail.value = settings.profile.email || "";
+    }
+    function renderPerms(){
+      const grid = document.getElementById("permGrid");
+      grid.innerHTML = PERM_META.map(([k,label,hint])=>{
+        const on = !!settings.permissions[k];
+        return `
+          <div class="rounded-xl border border-slate-200 p-3 flex items-center justify-between">
+            <div>
+              <div class="font-medium">${label}</div>
+              <div class="text-xs text-slate-500">${on? "Granted":"Revoked"} — ${hint}</div>
+            </div>
+            <button data-k="${k}" class="perm-toggle w-14 h-8 rounded-full relative ${on? "bg-indigo-600":"bg-slate-300"} transition-colors">
+              <span class="dot absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow ${on? "translate-x-6":""} transition-all"></span>
+            </button>
+          </div>`;
+      }).join("");
+      updateGrantCount();
+    }
+    function renderPrefs(){
+      prefTheme.value   = settings.preferences.theme;
+      prefDensity.value = settings.preferences.density;
+      prefCurrency.value= settings.preferences.currency;
+      prefLocale.value  = settings.preferences.locale;
+      if (settings.preferences.theme === "dark") document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+    }
+    function renderNotifs(){
+      notifEmail.checked = !!settings.notifications.email;
+      notifPush.checked  = !!settings.notifications.push;
+      notifDigest.checked= !!settings.notifications.digest;
+      digestDay.value    = settings.notifications.digestDay ?? 1;
+      alertThreshold.value = settings.notifications.alertThreshold ?? 0.8;
+    }
+    function renderAPI(){
+      apiBase.value  = settings.api.base || "";
+      apiModel.value = settings.api.model || "";
+      apiStatus.className = "text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700";
+      apiStatus.textContent = "unknown";
+    }
+
+    // ===== Initial paint =====
+    renderProfile(); renderPerms(); renderPrefs(); renderNotifs(); renderAPI();
+
+    // ===== Profile events =====
+    profName.addEventListener("input", e => { settings.profile.name = e.target.value; saveSettings(settings); });
+    profEmail.addEventListener("input", e => { settings.profile.email = e.target.value; saveSettings(settings); });
+
+    // ===== Permissions: delegation (every toggle works) =====
+    document.getElementById("permGrid").addEventListener("click", (e)=>{
+      const btn = e.target.closest(".perm-toggle"); if (!btn) return;
+      const k = btn.dataset.k;
+      settings.permissions[k] = !settings.permissions[k];
+      saveSettings(settings);
+      renderPerms(); // re-render to reflect state + labels
+    });
+    permAll.addEventListener("click", ()=>{
+      PERM_META.forEach(([k])=> settings.permissions[k] = true);
+      saveSettings(settings); renderPerms();
+    });
+    permNone.addEventListener("click", ()=>{
+      PERM_META.forEach(([k])=> settings.permissions[k] = false);
+      saveSettings(settings); renderPerms();
+    });
+    permReset.addEventListener("click", ()=>{
+      settings.permissions = structuredClone(DEFAULTS.permissions);
+      saveSettings(settings); renderPerms();
+    });
+
+    // ===== Notifications events =====
+    [notifEmail,notifPush,notifDigest,digestDay,alertThreshold].forEach(el=>{
+      el.addEventListener("input", ()=>{
+        settings.notifications.email = notifEmail.checked;
+        settings.notifications.push  = notifPush.checked;
+        settings.notifications.digest = notifDigest.checked;
+        settings.notifications.digestDay = Math.min(28, Math.max(1, +digestDay.value || 1));
+        settings.notifications.alertThreshold = Math.min(1, Math.max(0, +alertThreshold.value || 0.8));
+        saveSettings(settings);
+      });
+    });
+
+    // ===== Preferences events =====
+    [prefTheme,prefDensity,prefCurrency,prefLocale].forEach(el=>{
+      el.addEventListener("change", ()=>{
+        settings.preferences.theme    = prefTheme.value;
+        settings.preferences.density  = prefDensity.value;
+        settings.preferences.currency = prefCurrency.value;
+        settings.preferences.locale   = prefLocale.value;
+        saveSettings(settings);
+        renderPrefs();
+      });
+    });
+
+    // ===== API buttons =====
+    apiSave.addEventListener("click", ()=>{
+      settings.api.base  = apiBase.value.trim();
+      settings.api.model = apiModel.value.trim();
+      saveSettings(settings);
+    });
+    apiTest.addEventListener("click", async ()=>{
+      const base = (apiBase.value || "").replace(/\/+$/,"");
+      const badge = document.getElementById("apiStatus");
+      if (!base){ badge.textContent="missing base"; badge.className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"; return; }
+      badge.textContent="testing…"; badge.className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700";
+      try{
+        const r = await fetch(base + "/health");
+        if (r.ok){ badge.textContent="ok"; badge.className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"; }
+        else { badge.textContent=r.status; badge.className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700"; }
+      } catch(e){
+        badge.textContent="offline"; badge.className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700";
+      }
+    });
+
+    // ===== Data & Privacy buttons =====
+    exportBtn.addEventListener("click", ()=>{
+      const blob = new Blob([JSON.stringify(settings,null,2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "finebank-settings.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    importFile.addEventListener("change", async (e)=>{
+      const f = e.target.files?.[0]; if (!f) return;
+      try{
+        const obj = JSON.parse(await f.text());
+        localStorage.setItem("app_settings", JSON.stringify(obj));
+        if (obj?.permissions) localStorage.setItem("perms", JSON.stringify(obj.permissions));
+        location.reload();
+      }catch(err){ alert("Invalid JSON file."); }
+    });
+    resetBtn.addEventListener("click", ()=>{
+      if (!confirm("Reset settings to defaults?")) return;
+      localStorage.setItem("app_settings", JSON.stringify(DEFAULTS));
+      localStorage.setItem("perms", JSON.stringify(DEFAULTS.permissions));
+      location.reload();
+    });
+    clearBtn.addEventListener("click", ()=>{
+      if (!confirm("This will clear ALL local data for this site. Continue?")) return;
+      localStorage.clear();
+      location.reload();
+    });
+  </script>
+</body>
+</html>

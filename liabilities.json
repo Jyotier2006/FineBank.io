@@ -1,0 +1,7 @@
+{
+  "loans": [
+    { "name": "Home Loan", "outstanding": 2200000, "rate": 8.2 },
+    { "name": "Car Loan", "outstanding": 320000, "rate": 9.5 }
+  ],
+  "cards": [{ "name": "VISA", "outstanding": 18000, "apr": 36 }]
+}

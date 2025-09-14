@@ -1,0 +1,6 @@
+{
+  "cash": 60000,
+  "bank": [{ "name": "HDFC", "balance": 240000 }, { "name": "SBI", "balance": 90000 }],
+  "property": [{ "name": "Apartment", "value": 4500000 }],
+  "others": 12000
+}

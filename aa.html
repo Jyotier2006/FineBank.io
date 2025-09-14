@@ -1,0 +1,12 @@
+
+
+<script>
+fetch("http://localhost:5050/api/ask", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ question: "test", context: {} })
+})
+.then(r => r.json())
+.then(console.log)
+.catch(console.error);
+</script>
